@@ -1,14 +1,35 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Hono } from 'hono';
 import { createApprovalRouter } from './approvals';
+import { ApprovalService } from '../services/approval';
 import type { CreateApprovalRequest } from '../types/approval';
+
+// Mock SlackService to avoid real Slack calls
+vi.mock('../services/slack', () => {
+  return {
+    SlackService: vi.fn().mockImplementation(() => ({
+      sendApprovalRequest: vi.fn().mockResolvedValue({
+        ts: '1234567890.123456',
+        channel: 'C1234567890'
+      })
+    }))
+  };
+});
 
 describe('Approval API', () => {
   let app: Hono;
+  let approvalService: ApprovalService;
   
   beforeEach(() => {
+    approvalService = new ApprovalService({
+      slack: {
+        token: 'xoxb-test',
+        signingSecret: 'test-secret',
+        channel: 'C1234567890'
+      }
+    });
     app = new Hono();
-    app.route('/api', createApprovalRouter());
+    app.route('/api', createApprovalRouter(approvalService));
   });
 
   describe('POST /api/approvals', () => {

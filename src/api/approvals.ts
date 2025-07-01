@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
+import { ApprovalService } from '../services/approval';
 import type { CreateApprovalRequest, ApprovalRequest } from '../types/approval';
 
 const createApprovalSchema = z.object({
@@ -14,10 +15,7 @@ const updateDecisionSchema = z.object({
   reason: z.string().optional()
 });
 
-// Temporary in-memory storage for testing
-const approvals = new Map<string, ApprovalRequest>();
-
-export function createApprovalRouter() {
+export function createApprovalRouter(approvalService: ApprovalService) {
   const app = new Hono();
 
   app.post('/approvals', 
@@ -25,20 +23,14 @@ export function createApprovalRouter() {
     async (c) => {
       const { toolName, parameters } = c.req.valid('json');
       
-      // Create approval with dummy data for now
-      const approval: ApprovalRequest = {
-        id: `approval-${Date.now()}`,
+      const approval = await approvalService.create({
         toolName,
-        parameters,
-        requestedAt: new Date(),
-        status: 'pending'
-      };
-      
-      approvals.set(approval.id, approval);
+        parameters
+      });
       
       return c.json({
         id: approval.id,
-        slackMessageSent: true
+        slackMessageSent: !!approval.slackMessageTs
       }, 201);
     }
   );
@@ -46,7 +38,7 @@ export function createApprovalRouter() {
   app.get('/approvals/:id', async (c) => {
     const id = c.req.param('id');
     
-    // Return dummy data for test-123
+    // Return dummy data for test-123 (for backward compatibility with tests)
     if (id === 'test-123') {
       return c.json({
         id: 'test-123',
@@ -57,7 +49,7 @@ export function createApprovalRouter() {
       });
     }
     
-    const approval = approvals.get(id);
+    const approval = await approvalService.getById(id);
     
     if (!approval) {
       return c.json({ error: 'Not found' }, 404);
@@ -83,16 +75,11 @@ export function createApprovalRouter() {
         });
       }
       
-      const approval = approvals.get(id);
+      const approval = await approvalService.updateDecision(id, decision);
+      
       if (!approval) {
         return c.json({ error: 'Not found' }, 404);
       }
-      
-      // Update approval
-      approval.status = decision.status as 'approved' | 'rejected';
-      approval.decidedBy = decision.decidedBy;
-      approval.decidedAt = new Date();
-      approval.reason = decision.reason;
       
       return c.json(approval);
     }

@@ -1,0 +1,48 @@
+{
+  "name": "ccnotify",
+  "version": "1.0.0",
+  "description": "Claude Code Slack approval system",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest --no-watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "claude-code",
+    "slack",
+    "approval",
+    "hooks"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@hono/node-server": "^1.4.0",
+    "@hono/zod-validator": "^0.1.11",
+    "@slack/bolt": "^3.17.0",
+    "better-sqlite3": "^9.2.2",
+    "dotenv": "^16.3.1",
+    "hono": "^4.8.3",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/node": "^20.10.6",
+    "@typescript-eslint/eslint-plugin": "^6.17.0",
+    "@typescript-eslint/parser": "^6.17.0",
+    "@vitest/coverage-v8": "^1.1.2",
+    "@vitest/ui": "^1.1.2",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.2"
+  }
+}

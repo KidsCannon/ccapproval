@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { ApprovalService } from '../services/approval';
-import type { CreateApprovalRequest, ApprovalRequest } from '../types/approval';
 
 const createApprovalSchema = z.object({
   toolName: z.string(),

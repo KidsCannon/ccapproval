@@ -70,7 +70,7 @@ describe('SlackService', () => {
         status: 'pending'
       };
       
-      const result = await service.sendApprovalRequest(mockApproval);
+      await service.sendApprovalRequest(mockApproval);
       
       // Verify the Slack client was called
       const mockApp = (service as any).app;

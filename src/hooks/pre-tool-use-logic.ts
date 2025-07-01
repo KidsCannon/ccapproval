@@ -52,7 +52,7 @@ export class PreToolUseHandler {
     }
   }
 
-  private async requestApproval(event: ToolEvent) {
+  private async requestApproval(event: ToolEvent): Promise<any> {
     const response = await fetch(`${this.approvalServerUrl}/api/approvals`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -69,7 +69,7 @@ export class PreToolUseHandler {
     return response.json();
   }
 
-  private async waitForDecision(id: string) {
+  private async waitForDecision(id: string): Promise<any> {
     const deadline = Date.now() + this.approvalTimeout;
     
     while (Date.now() < deadline) {
@@ -79,7 +79,7 @@ export class PreToolUseHandler {
         throw new Error(`Failed to get approval status: ${response.status}`);
       }
       
-      const approval = await response.json();
+      const approval: any = await response.json();
       
       if (approval.status !== 'pending') {
         return approval;

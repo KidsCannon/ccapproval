@@ -130,6 +130,10 @@ export class SlackService {
   }
 
   async start(port?: number): Promise<void> {
-    await this.app.start(port);
+    if (port !== undefined) {
+      await this.app.start(port);
+    } else {
+      await this.app.start();
+    }
   }
 }

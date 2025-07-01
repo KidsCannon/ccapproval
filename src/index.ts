@@ -5,8 +5,7 @@ import { logger } from 'hono/logger';
 import dotenv from 'dotenv';
 import { createApprovalRouter } from './api/approvals';
 import { ApprovalService } from './services/approval';
-import { SlackService } from './services/slack';
-import { App as SlackApp } from '@slack/bolt';
+import { App as SlackApp, type BlockAction } from '@slack/bolt';
 
 // Load environment variables
 dotenv.config();
@@ -35,11 +34,11 @@ const slackApp = new SlackApp({
 });
 
 // Handle Slack button interactions
-slackApp.action('approve', async ({ body, ack }) => {
+slackApp.action<BlockAction>('approve', async ({ body, ack, action }) => {
   await ack();
   
-  if ('value' in body.actions[0]) {
-    await approvalService.updateDecision(body.actions[0].value, {
+  if ('value' in action && action.value) {
+    await approvalService.updateDecision(action.value, {
       status: 'approved',
       decidedBy: body.user.id,
       reason: 'Approved via Slack'
@@ -47,11 +46,11 @@ slackApp.action('approve', async ({ body, ack }) => {
   }
 });
 
-slackApp.action('reject', async ({ body, ack }) => {
+slackApp.action<BlockAction>('reject', async ({ body, ack, action }) => {
   await ack();
   
-  if ('value' in body.actions[0]) {
-    await approvalService.updateDecision(body.actions[0].value, {
+  if ('value' in action && action.value) {
+    await approvalService.updateDecision(action.value, {
       status: 'rejected',
       decidedBy: body.user.id,
       reason: 'Rejected via Slack'

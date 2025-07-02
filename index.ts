@@ -151,16 +151,16 @@ class ApprovalMcpServer {
             inputSchema: {
               type: 'object',
               properties: {
-                tool: {
+                tool_name: {
                   type: 'string',
                   description: 'Name of the tool requiring approval',
                 },
-                params: {
+                input: {
                   type: 'object',
                   description: 'Parameters being passed to the tool',
                 },
               },
-              required: ['tool', 'params'],
+              required: ['tool_name', 'input'],
             },
           },
         ],
@@ -182,9 +182,9 @@ class ApprovalMcpServer {
 
   private async handleToolApproval(args: any) {
     try {
-      const { tool, params } = args;
+      const { tool_name, input } = args;
       
-      if (!tool || !params) {
+      if (!tool_name || !input) {
         throw new McpError(
           ErrorCode.InvalidParams,
           'Both tool and params are required'
@@ -192,8 +192,8 @@ class ApprovalMcpServer {
       }
 
       // Check if tool is dangerous
-      console.log('received tool', tool)
-      if (!DANGEROUS_TOOLS.includes(tool)) {
+      console.log('received tool', tool_name)
+      if (!DANGEROUS_TOOLS.includes(tool_name)) {
         return {
           content: [
             {
@@ -211,8 +211,8 @@ class ApprovalMcpServer {
       // Create approval request
       const approval: ApprovalRequest = {
         id: randomUUID(),
-        toolName: tool,
-        parameters: params,
+        toolName: tool_name,
+        parameters: input,
         status: 'pending'
       };
       
@@ -222,13 +222,13 @@ class ApprovalMcpServer {
       try {
         await this.slackApp.client.chat.postMessage({
           channel: SLACK_CHANNEL_NAME || '',
-          text: `🔧 Tool execution approval requested: ${tool}`,
+          text: `🔧 Tool execution approval requested: ${tool_name}`,
           blocks: [
             {
               type: 'section',
               text: {
                 type: 'mrkdwn',
-                text: `🔧 *Tool execution approval requested*\n\n*Tool:* ${tool}\n*Parameters:*\n\`\`\`${JSON.stringify(params, null, 2)}\`\`\``
+                text: `🔧 *Tool execution approval requested*\n\n*Tool:* ${tool_name}\n*Parameters:*\n\`\`\`${JSON.stringify(input, null, 2)}\`\`\``
               }
             },
             {

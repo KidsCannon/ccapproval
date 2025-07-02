@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { ApprovalRequest } from "../types.js";
+import type { ApprovalRequest } from "../types.ts";
 import {
 	createApprovalRequestMessage,
 	createApprovedMessage,
 	createRejectedMessage,
-} from "./slack-messages.js";
+} from "./slack-messages.ts";
 
 describe("slack-messages", () => {
 	describe("createApprovalRequestMessage", () => {

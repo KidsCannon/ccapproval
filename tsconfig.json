@@ -1,9 +1,10 @@
 {
 	"compilerOptions": {
+		"noEmit": true,
 		"target": "ES2022",
 		"module": "ESNext",
 		"lib": ["ES2022"],
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"rootDir": "./",
 		"outDir": "./dist",
 		"strict": true,
@@ -19,6 +20,7 @@
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
 		"allowSyntheticDefaultImports": true,
+		"allowImportingTsExtensions": true,
 		"types": ["vitest/globals"]
 	},
 	"include": ["**/*.ts"],

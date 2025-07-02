@@ -14,9 +14,9 @@ import {
 	createApprovalRequestMessage,
 	createApprovedMessage,
 	createRejectedMessage,
-} from "./src/slack-messages.js";
-import { debug } from "./src/utils.js";
-import type { ApprovalRequest } from "./types.js";
+} from "./src/slack-messages.ts";
+import { debug } from "./src/utils.ts";
+import type { ApprovalRequest } from "./types.ts";
 
 const NAME = "ccapproval";
 const DANGEROUS_TOOLS = ["Bash", "Write", "Edit", "MultiEdit"];

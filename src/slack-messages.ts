@@ -1,4 +1,4 @@
-import type { ApprovalRequest } from "../types.js";
+import type { ApprovalRequest } from "../types.ts";
 
 export function createApprovalRequestMessage(
 	toolName: string,

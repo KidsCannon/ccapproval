@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { debug } from "./utils.js";
+import { debug } from "./utils.ts";
 
 describe("utils", () => {
 	describe("debug", () => {

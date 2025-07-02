@@ -8,8 +8,8 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
-import { randomUUID } from 'crypto';
-import { App as SlackApp, type BlockAction } from '@slack/bolt';
+import { randomUUID } from 'node:crypto';
+import { LogLevel, App as SlackApp, type BlockAction } from '@slack/bolt';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -37,7 +37,7 @@ class ApprovalMcpServer {
   constructor() {
     this.server = new Server(
       {
-        name: 'ccnotify-approval-server',
+        name: 'ccnotify',
         version: '1.0.0',
       },
       {
@@ -49,10 +49,10 @@ class ApprovalMcpServer {
 
     // Initialize Slack app for handling interactions
     this.slackApp = new SlackApp({
-      token: process.env.SLACK_BOT_TOKEN || '',
-      signingSecret: process.env.SLACK_SIGNING_SECRET || '',
-      socketMode: false,
-      port: parseInt(process.env.SLACK_PORT || '3001')
+      logLevel: LogLevel.DEBUG,
+      token: process.env.SLACK_BOT_TOKEN ?? '',
+      appToken: process.env.SLACK_APP_TOKEN ?? '',
+      socketMode: true,
     });
 
     this.setupSlackHandlers();

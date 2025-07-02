@@ -13,7 +13,7 @@ import bolt from '@slack/bolt';
 
 const NAME = 'ccapproval';
 const DANGEROUS_TOOLS = ['Bash', 'Write', 'Edit', 'MultiEdit'];
-const APPROVAL_TIMEOUT = parseInt(process.env.APPROVAL_TIMEOUT_MS || '30000');
+const APPROVAL_TIMEOUT = 12 * 60 * 60 * 1000; // 12 hours
 
 interface ApprovalRequest {
   id: string;

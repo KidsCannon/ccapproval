@@ -1,0 +1,22 @@
+{
+  "env": {
+    "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+    "SLACK_SIGNING_SECRET": "${SLACK_SIGNING_SECRET}",
+    "SLACK_CHANNEL": "${SLACK_CHANNEL}",
+    "APPROVAL_SERVER_URL": "http://localhost:3000",
+    "APPROVAL_TIMEOUT_MS": "30000"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${PROJECT_ROOT}/src/hooks/pre-tool-use.ts"
+          }
+        ]
+      }
+    ]
+  }
+}

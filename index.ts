@@ -158,16 +158,20 @@ async function waitForDecision(id: string): Promise<ApprovalRequest> {
 		// Set timeout
 		setTimeout(() => {
 			const approval = approvals.get(id);
-			if (approval && approval.status === "pending") {
-				approval.status = "timeout";
-				approval.reason = "Approval request timed out";
-
-				const resolver = pendingResolvers.get(id);
-				if (resolver) {
-					resolver.resolve(approval);
-					pendingResolvers.delete(id);
-				}
+			if (!approval || approval.status !== "pending") {
+				return;
 			}
+
+			approval.status = "timeout";
+			approval.reason = "Approval request timed out";
+
+			const resolver = pendingResolvers.get(id);
+			if (!resolver) {
+				return;
+			}
+
+			resolver.resolve(approval);
+			pendingResolvers.delete(id);
 		}, APPROVAL_TIMEOUT);
 	});
 }
@@ -203,40 +207,46 @@ async function run() {
 		async ({ body, ack, action, client }) => {
 			await ack();
 
-			if ("value" in action && action.value) {
-				const approval = approvals.get(action.value);
-				if (approval && approval.status === "pending") {
-					approval.status = "approved";
-					approval.decidedBy = body.user.id;
-					approval.decidedAt = new Date();
-					approval.reason = "Approved via Slack";
-
-					// Notify waiting promise
-					const resolver = pendingResolvers.get(action.value);
-					if (resolver) {
-						resolver.resolve(approval);
-						pendingResolvers.delete(action.value);
-					}
-
-					// Update Slack message
-					if (body.message?.ts) {
-						await client.chat.update({
-							channel: body.channel?.id ?? SLACK_CHANNEL_NAME,
-							ts: body.message.ts,
-							text: `✅ Tool execution approved by <@${body.user.id}>`,
-							blocks: [
-								{
-									type: "section",
-									text: {
-										type: "mrkdwn",
-										text: `✅ *Tool execution approved*\n\n*Tool:* ${approval.toolName}\n*Arguments:* ${JSON.stringify(approval.parameters, null, 2)}\n*Decided by:* <@${body.user.id}>\n*Time:* ${new Date().toISOString()}`,
-									},
-								},
-							],
-						});
-					}
-				}
+			if (!("value" in action) || !action.value) {
+				return;
 			}
+
+			const approval = approvals.get(action.value);
+			if (!approval || approval.status !== "pending") {
+				return;
+			}
+
+			approval.status = "approved";
+			approval.decidedBy = body.user.id;
+			approval.decidedAt = new Date();
+			approval.reason = "Approved via Slack";
+
+			// Notify waiting promise
+			const resolver = pendingResolvers.get(action.value);
+			if (resolver) {
+				resolver.resolve(approval);
+				pendingResolvers.delete(action.value);
+			}
+
+			// Update Slack message
+			if (!body.message?.ts) {
+				return;
+			}
+
+			await client.chat.update({
+				channel: body.channel?.id ?? SLACK_CHANNEL_NAME,
+				ts: body.message.ts,
+				text: `✅ Tool execution approved by <@${body.user.id}>`,
+				blocks: [
+					{
+						type: "section",
+						text: {
+							type: "mrkdwn",
+							text: `✅ *Tool execution approved*\n\n*Tool:* ${approval.toolName}\n*Arguments:* ${JSON.stringify(approval.parameters, null, 2)}\n*Decided by:* <@${body.user.id}>\n*Time:* ${new Date().toISOString()}`,
+						},
+					},
+				],
+			});
 		},
 	);
 
@@ -246,40 +256,46 @@ async function run() {
 		async ({ body, ack, action, client }) => {
 			await ack();
 
-			if ("value" in action && action.value) {
-				const approval = approvals.get(action.value);
-				if (approval && approval.status === "pending") {
-					approval.status = "rejected";
-					approval.decidedBy = body.user.id;
-					approval.decidedAt = new Date();
-					approval.reason = "Rejected via Slack";
-
-					// Notify waiting promise
-					const resolver = pendingResolvers.get(action.value);
-					if (resolver) {
-						resolver.resolve(approval);
-						pendingResolvers.delete(action.value);
-					}
-
-					// Update Slack message
-					if (body.message?.ts) {
-						await client.chat.update({
-							channel: body.channel?.id ?? SLACK_CHANNEL_NAME,
-							ts: body.message.ts,
-							text: `❌ Tool execution rejected by <@${body.user.id}>`,
-							blocks: [
-								{
-									type: "section",
-									text: {
-										type: "mrkdwn",
-										text: `❌ *Tool execution rejected*\n\n*Tool:* ${approval.toolName}\n*Decided by:* <@${body.user.id}>\n*Time:* ${new Date().toISOString()}`,
-									},
-								},
-							],
-						});
-					}
-				}
+			if (!("value" in action) || !action.value) {
+				return;
 			}
+
+			const approval = approvals.get(action.value);
+			if (!approval || approval.status !== "pending") {
+				return;
+			}
+
+			approval.status = "rejected";
+			approval.decidedBy = body.user.id;
+			approval.decidedAt = new Date();
+			approval.reason = "Rejected via Slack";
+
+			// Notify waiting promise
+			const resolver = pendingResolvers.get(action.value);
+			if (resolver) {
+				resolver.resolve(approval);
+				pendingResolvers.delete(action.value);
+			}
+
+			// Update Slack message
+			if (!body.message?.ts) {
+				return;
+			}
+
+			await client.chat.update({
+				channel: body.channel?.id ?? SLACK_CHANNEL_NAME,
+				ts: body.message.ts,
+				text: `❌ Tool execution rejected by <@${body.user.id}>`,
+				blocks: [
+					{
+						type: "section",
+						text: {
+							type: "mrkdwn",
+							text: `❌ *Tool execution rejected*\n\n*Tool:* ${approval.toolName}\n*Decided by:* <@${body.user.id}>\n*Time:* ${new Date().toISOString()}`,
+						},
+					},
+				],
+			});
 		},
 	);
 

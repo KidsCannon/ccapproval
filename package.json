@@ -1,33 +1,33 @@
 {
-  "name": "ccapproval",
-  "version": "1.0.0",
-  "description": "Claude Code Slack approval system via MCP",
-  "type": "module",
-  "main": "dist/index.js",
-  "scripts": {
-    "dev": "tsx index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "test": "vitest --no-watch",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
-    "typecheck": "tsc --noEmit"
-  },
-  "keywords": [
-    "claude-code",
-    "slack",
-    "approval",
-    "hooks"
-  ],
-  "author": "Takatoshi Matsumoto",
-  "license": "MIT",
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.13.3",
-    "@slack/bolt": "^3.17.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.8.3",
-    "vitest": "^1.1.2",
-    "@biomejs/biome": "^2.0.6"
-  }
+	"name": "ccapproval",
+	"version": "1.0.0",
+	"description": "Claude Code Slack approval system via MCP",
+	"type": "module",
+	"main": "dist/index.js",
+	"scripts": {
+		"dev": "tsx index.ts",
+		"build": "tsc",
+		"start": "node dist/index.js",
+		"test": "vitest --no-watch",
+		"test:ui": "vitest --ui",
+		"test:coverage": "vitest --coverage",
+		"typecheck": "tsc --noEmit"
+	},
+	"keywords": [
+		"claude-code",
+		"slack",
+		"approval",
+		"hooks"
+	],
+	"author": "Takatoshi Matsumoto",
+	"license": "MIT",
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.13.3",
+		"@slack/bolt": "^3.17.0"
+	},
+	"devDependencies": {
+		"typescript": "^5.8.3",
+		"vitest": "^1.1.2",
+		"@biomejs/biome": "^2.0.6"
+	}
 }

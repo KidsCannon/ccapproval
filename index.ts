@@ -14,22 +14,21 @@ import bolt from "@slack/bolt";
 const NAME = "ccapproval";
 const DANGEROUS_TOOLS = ["Bash", "Write", "Edit", "MultiEdit"];
 const APPROVAL_TIMEOUT = 12 * 60 * 60 * 1000; // 12 hours
-const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN || "";
-const SLACK_APP_TOKEN = process.env.SLACK_APP_TOKEN || "";
-const SLACK_CHANNEL_NAME = process.env.SLACK_CHANNEL_NAME || "";
+
+const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
+const SLACK_APP_TOKEN = process.env.SLACK_APP_TOKEN;
+const SLACK_CHANNEL_NAME = process.env.SLACK_CHANNEL_NAME;
 
 interface ApprovalRequest {
 	id: string;
 	toolName: string;
-	parameters: Record<string, unknown>;
+	parameters: unknown;
 	status: "pending" | "approved" | "rejected" | "timeout";
 	decidedBy?: string;
 	decidedAt?: Date;
 	reason?: string;
 }
 
-let server: Server;
-let slackApp: bolt.App;
 const approvals = new Map<string, ApprovalRequest>();
 const pendingResolvers = new Map<
 	string,
@@ -41,24 +40,29 @@ function debug(...args: unknown[]) {
 	console.error(...args);
 }
 
-// ツール承認の処理
-async function handleToolApproval(args: unknown) {
+async function handlePermissionPrompt(
+	slackApp: bolt.App,
+	channel: string,
+	args: unknown,
+) {
 	try {
-		const { tool_name, input } = args as {
-			tool_name: string;
-			input: Record<string, unknown>;
-		};
-
-		if (!tool_name || !input) {
-			throw new McpError(
-				ErrorCode.InvalidParams,
-				"Both tool and params are required",
-			);
+		if (typeof args !== "object" || args == null) {
+			throw new McpError(ErrorCode.InvalidParams, "Invalid arguments");
+		}
+		if (!("tool_name" in args) || typeof args.tool_name !== "string") {
+			throw new McpError(ErrorCode.InvalidParams, "Invalid tool_name");
+		}
+		if (
+			!("input" in args) ||
+			typeof args.input !== "object" ||
+			args.input == null
+		) {
+			throw new McpError(ErrorCode.InvalidParams, "Invalid input");
 		}
 
 		// Check if tool is dangerous
-		debug("received tool", tool_name);
-		if (!DANGEROUS_TOOLS.includes(tool_name)) {
+		debug("received tool", args.tool_name);
+		if (!DANGEROUS_TOOLS.includes(args.tool_name)) {
 			return {
 				content: [
 					{
@@ -76,57 +80,52 @@ async function handleToolApproval(args: unknown) {
 		// Create approval request
 		const approval: ApprovalRequest = {
 			id: randomUUID(),
-			toolName: tool_name,
-			parameters: input,
+			toolName: args.tool_name,
+			parameters: args.input,
 			status: "pending",
 		};
 
 		approvals.set(approval.id, approval);
 
 		// Send Slack notification
-		try {
-			await slackApp.client.chat.postMessage({
-				channel: SLACK_CHANNEL_NAME || "",
-				text: `🔧 Tool execution approval requested: ${tool_name}`,
-				blocks: [
-					{
-						type: "section",
-						text: {
-							type: "mrkdwn",
-							text: `🔧 *Tool execution approval requested*\n\n*Tool:* ${tool_name}\n*Parameters:*\n\`\`\`${JSON.stringify(input, null, 2)}\`\`\``,
+		await slackApp.client.chat.postMessage({
+			channel,
+			text: `🔧 Tool execution approval requested: ${args.tool_name}`,
+			blocks: [
+				{
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `🔧 *Tool execution approval requested*\n\n*Tool:* ${args.tool_name}\n*Parameters:*\n\`\`\`${JSON.stringify(args.input, null, 2)}\`\`\``,
+					},
+				},
+				{
+					type: "actions",
+					elements: [
+						{
+							type: "button",
+							text: {
+								type: "plain_text",
+								text: "✅ Approve",
+							},
+							style: "primary",
+							action_id: "approve",
+							value: approval.id,
 						},
-					},
-					{
-						type: "actions",
-						elements: [
-							{
-								type: "button",
-								text: {
-									type: "plain_text",
-									text: "✅ Approve",
-								},
-								style: "primary",
-								action_id: "approve",
-								value: approval.id,
+						{
+							type: "button",
+							text: {
+								type: "plain_text",
+								text: "❌ Reject",
 							},
-							{
-								type: "button",
-								text: {
-									type: "plain_text",
-									text: "❌ Reject",
-								},
-								style: "danger",
-								action_id: "reject",
-								value: approval.id,
-							},
-						],
-					},
-				],
-			});
-		} catch (error) {
-			debug("Failed to send Slack notification:", error);
-			// Continue even if Slack fails
-		}
+							style: "danger",
+							action_id: "reject",
+							value: approval.id,
+						},
+					],
+				},
+			],
+		});
 
 		// Wait for decision with timeout
 		const decision = await waitForDecision(approval.id);
@@ -173,10 +172,9 @@ async function waitForDecision(id: string): Promise<ApprovalRequest> {
 	});
 }
 
-// 初期化と実行
-async function init() {
-	// Initialize MCP server
-	server = new Server(
+// サーバーの実行
+async function run() {
+	const server = new Server(
 		{
 			name: NAME,
 			version: "1.0.0",
@@ -188,11 +186,14 @@ async function init() {
 		},
 	);
 
-	// Initialize Slack app
-	slackApp = new bolt.App({
+	if (!SLACK_BOT_TOKEN || !SLACK_APP_TOKEN || !SLACK_CHANNEL_NAME) {
+		throw new Error("Missing required environment variables");
+	}
+
+	const slackApp = new bolt.App({
 		logLevel: bolt.LogLevel.DEBUG,
-		token: SLACK_BOT_TOKEN ?? "",
-		appToken: SLACK_APP_TOKEN ?? "",
+		token: SLACK_BOT_TOKEN,
+		appToken: SLACK_APP_TOKEN,
 		socketMode: true,
 	});
 
@@ -220,7 +221,7 @@ async function init() {
 					// Update Slack message
 					if (body.message?.ts) {
 						await client.chat.update({
-							channel: body.channel?.id || SLACK_CHANNEL_NAME || "",
+							channel: body.channel?.id ?? SLACK_CHANNEL_NAME,
 							ts: body.message.ts,
 							text: `✅ Tool execution approved by <@${body.user.id}>`,
 							blocks: [
@@ -263,7 +264,7 @@ async function init() {
 					// Update Slack message
 					if (body.message?.ts) {
 						await client.chat.update({
-							channel: body.channel?.id || SLACK_CHANNEL_NAME || "",
+							channel: body.channel?.id ?? SLACK_CHANNEL_NAME,
 							ts: body.message.ts,
 							text: `❌ Tool execution rejected by <@${body.user.id}>`,
 							blocks: [
@@ -311,7 +312,11 @@ async function init() {
 	server.setRequestHandler(CallToolRequestSchema, async (request) => {
 		switch (request.params.name) {
 			case "tool-approval":
-				return await handleToolApproval(request.params.arguments || {});
+				return await handlePermissionPrompt(
+					slackApp,
+					SLACK_CHANNEL_NAME,
+					request.params.arguments || {},
+				);
 			default:
 				throw new McpError(
 					ErrorCode.MethodNotFound,
@@ -319,24 +324,15 @@ async function init() {
 				);
 		}
 	});
-}
 
-// サーバーの実行
-async function run() {
-	// Initialize everything
-	await init();
-
-	// Start Slack app
 	await slackApp.start();
 	debug("⚡️ Slack app is running");
 
-	// Start MCP server
 	const transport = new StdioServerTransport();
 	await server.connect(transport);
 	debug("🚀 MCP server connected and ready");
 }
 
-// メイン実行
 run().catch((error) => {
 	debug("Server failed to start:", error);
 	process.exit(1);

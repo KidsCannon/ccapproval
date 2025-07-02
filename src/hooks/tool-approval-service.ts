@@ -14,7 +14,7 @@ export interface ApprovalDecision {
   reason: string;
 }
 
-export class PreToolUseHandler {
+export class ToolApprovalService {
   private approvalServerUrl: string;
   private approvalTimeout: number;
 

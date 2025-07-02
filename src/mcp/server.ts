@@ -9,7 +9,7 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import dotenv from 'dotenv';
-import { PreToolUseHandler } from '../hooks/pre-tool-use-logic.js';
+import { ToolApprovalService } from '../hooks/tool-approval-service.js';
 
 // Load environment variables
 dotenv.config();
@@ -19,7 +19,7 @@ const APPROVAL_SERVER_URL = process.env.APPROVAL_SERVER_URL || 'http://localhost
 
 class ApprovalMcpServer {
   private server: Server;
-  private approvalHandler: PreToolUseHandler;
+  private approvalService: ToolApprovalService;
 
   constructor() {
     this.server = new Server(
@@ -34,7 +34,7 @@ class ApprovalMcpServer {
       }
     );
 
-    this.approvalHandler = new PreToolUseHandler(APPROVAL_SERVER_URL, APPROVAL_TIMEOUT);
+    this.approvalService = new ToolApprovalService(APPROVAL_SERVER_URL, APPROVAL_TIMEOUT);
     this.setupToolHandlers();
   }
 
@@ -89,7 +89,7 @@ class ApprovalMcpServer {
       }
 
       const input = JSON.stringify({ tool, params });
-      const decision = await this.approvalHandler.handle(input);
+      const decision = await this.approvalService.handle(input);
 
       return {
         content: [

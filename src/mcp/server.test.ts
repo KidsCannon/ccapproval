@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PreToolUseHandler, type ApprovalDecision } from '../hooks/pre-tool-use-logic.js';
+import { ToolApprovalService } from '../hooks/tool-approval-service.js';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -12,7 +12,7 @@ describe('MCP Server Tool Approval', () => {
 
   describe('tool approval logic', () => {
     it('should approve safe tools automatically', async () => {
-      const handler = new PreToolUseHandler('http://localhost:3210', 30000);
+      const handler = new ToolApprovalService('http://localhost:3210', 30000);
       const input = JSON.stringify({ tool: 'Read', params: { file_path: '/test' } });
       
       const result = await handler.handle(input);
@@ -36,7 +36,7 @@ describe('MCP Server Tool Approval', () => {
           })
         });
 
-      const handler = new PreToolUseHandler('http://localhost:3210', 30000);
+      const handler = new ToolApprovalService('http://localhost:3210', 30000);
       const input = JSON.stringify({ 
         tool: 'Bash', 
         params: { command: 'echo "test"' } 
@@ -64,7 +64,7 @@ describe('MCP Server Tool Approval', () => {
           })
         });
 
-      const handler = new PreToolUseHandler('http://localhost:3210', 30000);
+      const handler = new ToolApprovalService('http://localhost:3210', 30000);
       const input = JSON.stringify({ 
         tool: 'Write', 
         params: { file_path: '/etc/passwd', content: 'malicious' } 
@@ -80,7 +80,7 @@ describe('MCP Server Tool Approval', () => {
       // Mock fetch to throw an error
       mockFetch.mockRejectedValue(new Error('Network error'));
 
-      const handler = new PreToolUseHandler('http://localhost:3210', 30000);
+      const handler = new ToolApprovalService('http://localhost:3210', 30000);
       const input = JSON.stringify({ 
         tool: 'Bash', 
         params: { command: 'echo "test"' } 
@@ -93,7 +93,7 @@ describe('MCP Server Tool Approval', () => {
     });
 
     it('should handle invalid JSON input', async () => {
-      const handler = new PreToolUseHandler('http://localhost:3210', 30000);
+      const handler = new ToolApprovalService('http://localhost:3210', 30000);
       const invalidInput = 'invalid json';
       
       const result = await handler.handle(invalidInput);
@@ -106,15 +106,15 @@ describe('MCP Server Tool Approval', () => {
       const serverUrl = 'http://example.com:8080';
       const timeout = 60000;
       
-      const handler = new PreToolUseHandler(serverUrl, timeout);
+      const handler = new ToolApprovalService(serverUrl, timeout);
       
-      expect(handler).toBeInstanceOf(PreToolUseHandler);
+      expect(handler).toBeInstanceOf(ToolApprovalService);
     });
   });
 
   describe('tool validation', () => {
     it('should accept valid tool input for safe tools', async () => {
-      const handler = new PreToolUseHandler('http://localhost:3210', 30000);
+      const handler = new ToolApprovalService('http://localhost:3210', 30000);
       const validInput = JSON.stringify({ 
         tool: 'Read',
         params: { file_path: '/test.txt' }
@@ -140,7 +140,7 @@ describe('MCP Server Tool Approval', () => {
           })
         });
 
-      const handler = new PreToolUseHandler('http://localhost:3210', 1000); // Short timeout for test
+      const handler = new ToolApprovalService('http://localhost:3210', 1000); // Short timeout for test
       const input = JSON.stringify({ 
         tool: 'Bash',
         params: { command: 'echo "test"' }

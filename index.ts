@@ -309,8 +309,8 @@ class ApprovalMcpServer {
 
   async run() {
     // Start Slack app
-    const app = await this.slackApp.start();
-    console.log('⚡️ Slack app is running on ', app.address());
+    await this.slackApp.start();
+    console.log('⚡️ Slack app is running');
 
     // Start MCP server
     const transport = new StdioServerTransport();

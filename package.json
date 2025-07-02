@@ -19,7 +19,7 @@
     "approval",
     "hooks"
   ],
-  "author": "",
+  "author": "Takatoshi Matsumoto",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.3",

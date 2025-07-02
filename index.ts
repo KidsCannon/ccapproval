@@ -14,6 +14,9 @@ import bolt from '@slack/bolt';
 const NAME = 'ccapproval';
 const DANGEROUS_TOOLS = ['Bash', 'Write', 'Edit', 'MultiEdit'];
 const APPROVAL_TIMEOUT = 12 * 60 * 60 * 1000; // 12 hours
+const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN || '';
+const SLACK_APP_TOKEN = process.env.SLACK_APP_TOKEN || '';
+const SLACK_CHANNEL_NAME = process.env.SLACK_CHANNEL_NAME || '';
 
 interface ApprovalRequest {
   id: string;

@@ -86,7 +86,7 @@ class ApprovalMcpServer {
                   type: 'section',
                   text: {
                     type: 'mrkdwn',
-                    text: `✅ *Tool execution approved*\n\n*Tool:* ${approval.toolName}\n*Decided by:* <@${body.user.id}>\n*Time:* ${new Date().toISOString()}`
+                    text: `✅ *Tool execution approved*\n\n*Tool:* ${approval.toolName}\n*Arguments:* ${JSON.stringify(approval.parameters, null, 2)}\n*Decided by:* <@${body.user.id}>\n*Time:* ${new Date().toISOString()}`
                   }
                 }
               ]
@@ -164,9 +164,10 @@ class ApprovalMcpServer {
     });
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      console.log('request', request)
       switch (request.params.name) {
         case 'tool-approval':
-          return await this.handleToolApproval(request.params.arguments || {});
+          return await this.handleToolApproval(request.params.arguments as { tool_name: string, input: any});
         default:
           throw new McpError(
             ErrorCode.MethodNotFound,
@@ -176,11 +177,13 @@ class ApprovalMcpServer {
     });
   }
 
-  private async handleToolApproval(args: any) {
+  private async handleToolApproval(args: { tool_name: string, input: any}) {
+    console.log('handleToolApproval:', args)
+
     try {
-      const { tool, params } = args;
+      const { tool_name, input } = args;
       
-      if (!tool || !params) {
+      if (!tool_name || !input) {
         throw new McpError(
           ErrorCode.InvalidParams,
           'Both tool and params are required'
@@ -188,8 +191,8 @@ class ApprovalMcpServer {
       }
 
       // Check if tool is dangerous
-      console.log('received tool', tool)
-      if (!DANGEROUS_TOOLS.includes(tool)) {
+      console.log('received tool', tool_name)
+      if (!DANGEROUS_TOOLS.includes(tool_name)) {
         return {
           content: [
             {
@@ -207,8 +210,8 @@ class ApprovalMcpServer {
       // Create approval request
       const approval: ApprovalRequest = {
         id: randomUUID(),
-        toolName: tool,
-        parameters: params,
+        toolName: tool_name,
+        parameters: input,
         status: 'pending'
       };
       
@@ -218,13 +221,13 @@ class ApprovalMcpServer {
       try {
         await this.slackApp.client.chat.postMessage({
           channel: process.env.SLACK_CHANNEL || '',
-          text: `🔧 Tool execution approval requested: ${tool}`,
+          text: `🔧 Tool execution approval requested: ${tool_name}`,
           blocks: [
             {
               type: 'section',
               text: {
                 type: 'mrkdwn',
-                text: `🔧 *Tool execution approval requested*\n\n*Tool:* ${tool}\n*Parameters:*\n\`\`\`${JSON.stringify(params, null, 2)}\`\`\``
+                text: `🔧 *Tool execution approval requested*\n\n*Tool:* ${tool_name}\n*Parameters:*\n\`\`\`${JSON.stringify(input, null, 2)}\`\`\``
               }
             },
             {

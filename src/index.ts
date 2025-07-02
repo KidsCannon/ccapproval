@@ -65,7 +65,7 @@ app.route('/api', createApprovalRouter(approvalService));
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
 // Start servers
-const port = parseInt(process.env.PORT || '3000');
+const port = parseInt(process.env.PORT || '3210');
 
 async function startServers() {
   // Start Slack app

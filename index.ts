@@ -28,11 +28,15 @@ interface ApprovalRequest {
   reason?: string;
 }
 
-// グローバル変数
 let server: Server;
 let slackApp: bolt.App;
 const approvals = new Map<string, ApprovalRequest>();
 const pendingResolvers = new Map<string, { resolve: (value: ApprovalRequest) => void }>();
+
+// Debug logging for MCP Server
+function debug(...args: unknown[]) {
+  console.error(...args);
+}
 
 // Slack のハンドラー設定
 function setupSlackHandlers() {
@@ -170,7 +174,7 @@ async function handleToolApproval(args: any) {
     }
 
     // Check if tool is dangerous
-    console.log('received tool', tool_name)
+    debug('received tool', tool_name)
     if (!DANGEROUS_TOOLS.includes(tool_name)) {
       return {
         content: [
@@ -237,7 +241,7 @@ async function handleToolApproval(args: any) {
         ]
       });
     } catch (error) {
-      console.error('Failed to send Slack notification:', error);
+      debug('Failed to send Slack notification:', error);
       // Continue even if Slack fails
     }
 
@@ -321,16 +325,17 @@ async function run() {
 
   // Start Slack app
   await slackApp.start();
-  console.log('⚡️ Slack app is running');
+  debug('⚡️ Slack app is running');
 
   // Start MCP server
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.log('🚀 MCP server connected and ready');
+  debug('🚀 MCP server connected and ready');
 }
 
 // メイン実行
 run().catch((error) => {
-  console.error('Server failed to start:', error);
+  debug('Server failed to start:', error);
   process.exit(1);
 });
+

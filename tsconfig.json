@@ -19,7 +19,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
-    "types": ["node", "vitest/globals"]
+    "types": ["vitest/globals"]
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist", "coverage"]

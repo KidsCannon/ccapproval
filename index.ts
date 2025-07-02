@@ -92,6 +92,7 @@ async function handlePermissionPrompt(
 
 		debug("Waiting for decision", approval.id);
 		const decision = await waitForDecision(approval.id);
+		debug("Decision:", decision);
 
 		return {
 			content: [
@@ -169,6 +170,8 @@ async function run() {
 	slackApp.action<bolt.BlockAction>(
 		"approve",
 		async ({ body, ack, action, client }) => {
+			debug("on approve", body, action);
+
 			await ack();
 
 			if (!("value" in action) || !action.value) {
@@ -180,6 +183,7 @@ async function run() {
 				return;
 			}
 
+			debug("approving", approval);
 			approval.status = "approved";
 			approval.decidedBy = body.user.id;
 			approval.decidedAt = new Date();
@@ -188,6 +192,7 @@ async function run() {
 			// Notify waiting promise
 			const resolver = pendingResolvers.get(action.value);
 			if (resolver) {
+				debug("resolving", approval);
 				resolver.resolve(approval);
 				pendingResolvers.delete(action.value);
 			}
@@ -197,7 +202,9 @@ async function run() {
 				return;
 			}
 
+			debug("updating slack message", approval);
 			const message = createApprovedMessage(approval, body.user.id);
+			debug("updating slack message", message);
 			await client.chat.update({
 				channel: body.channel?.id ?? SLACK_CHANNEL_NAME,
 				ts: body.message.ts,
@@ -210,6 +217,7 @@ async function run() {
 	slackApp.action<bolt.BlockAction>(
 		"reject",
 		async ({ body, ack, action, client }) => {
+			debug("on reject", body, action);
 			await ack();
 
 			if (!("value" in action) || !action.value) {
@@ -221,6 +229,7 @@ async function run() {
 				return;
 			}
 
+			debug("rejecting", approval);
 			approval.status = "rejected";
 			approval.decidedBy = body.user.id;
 			approval.decidedAt = new Date();
@@ -229,6 +238,7 @@ async function run() {
 			// Notify waiting promise
 			const resolver = pendingResolvers.get(action.value);
 			if (resolver) {
+				debug("resolving", approval);
 				resolver.resolve(approval);
 				pendingResolvers.delete(action.value);
 			}
@@ -238,7 +248,9 @@ async function run() {
 				return;
 			}
 
+			debug("updating slack message", approval);
 			const message = createRejectedMessage(approval, body.user.id);
+			debug("updating slack message", message);
 			await client.chat.update({
 				channel: body.channel?.id ?? SLACK_CHANNEL_NAME,
 				ts: body.message.ts,

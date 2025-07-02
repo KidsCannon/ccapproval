@@ -33,7 +33,7 @@ class ApprovalMcpServer {
   constructor() {
     this.server = new Server(
       {
-        name: 'ccnotify',
+        name: 'ccapproval',
         version: '1.0.0',
       },
       {

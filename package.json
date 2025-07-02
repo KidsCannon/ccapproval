@@ -1,5 +1,5 @@
 {
-  "name": "ccnotify",
+  "name": "ccapproval",
   "version": "1.0.0",
   "description": "Claude Code Slack approval system via MCP",
   "type": "module",

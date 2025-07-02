@@ -11,6 +11,7 @@ import {
 import { randomUUID } from 'node:crypto';
 import bolt from '@slack/bolt';
 
+const NAME = 'ccapproval';
 const DANGEROUS_TOOLS = ['Bash', 'Write', 'Edit', 'MultiEdit'];
 const APPROVAL_TIMEOUT = parseInt(process.env.APPROVAL_TIMEOUT_MS || '30000');
 
@@ -33,7 +34,7 @@ class ApprovalMcpServer {
   constructor() {
     this.server = new Server(
       {
-        name: 'ccapproval',
+        name: NAME,
         version: '1.0.0',
       },
       {
@@ -46,8 +47,8 @@ class ApprovalMcpServer {
     // Initialize Slack app for handling interactions
     this.slackApp = new bolt.App({
       logLevel: bolt.LogLevel.DEBUG,
-      token: process.env.SLACK_BOT_TOKEN ?? '',
-      appToken: process.env.SLACK_APP_TOKEN ?? '',
+      token: SLACK_BOT_TOKEN ?? '',
+      appToken: SLACK_APP_TOKEN ?? '',
       socketMode: true,
     });
 
@@ -78,7 +79,7 @@ class ApprovalMcpServer {
           // Update Slack message
           if (body.message?.ts) {
             await client.chat.update({
-              channel: body.channel?.id || process.env.SLACK_CHANNEL || '',
+              channel: body.channel?.id || SLACK_CHANNEL_NAME || '',
               ts: body.message.ts,
               text: `✅ Tool execution approved by <@${body.user.id}>`,
               blocks: [
@@ -118,7 +119,7 @@ class ApprovalMcpServer {
           // Update Slack message
           if (body.message?.ts) {
             await client.chat.update({
-              channel: body.channel?.id || process.env.SLACK_CHANNEL || '',
+              channel: body.channel?.id || SLACK_CHANNEL_NAME || '',
               ts: body.message.ts,
               text: `❌ Tool execution rejected by <@${body.user.id}>`,
               blocks: [
@@ -217,7 +218,7 @@ class ApprovalMcpServer {
       // Send Slack notification
       try {
         await this.slackApp.client.chat.postMessage({
-          channel: process.env.SLACK_CHANNEL || '',
+          channel: SLACK_CHANNEL_NAME || '',
           text: `🔧 Tool execution approval requested: ${tool}`,
           blocks: [
             {
@@ -305,8 +306,8 @@ class ApprovalMcpServer {
 
   async run() {
     // Start Slack app
-    await this.slackApp.start();
-    console.log('⚡️ Slack app is running on port', process.env.SLACK_PORT || '3001');
+    const app = await this.slackApp.start();
+    console.log('⚡️ Slack app is running on ', app.address());
 
     // Start MCP server
     const transport = new StdioServerTransport();

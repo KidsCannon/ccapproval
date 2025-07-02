@@ -8,6 +8,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "mcp:server": "tsx src/mcp/server.ts",
+    "mcp:server:build": "tsc && node dist/mcp/server.js",
     "test": "vitest --no-watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
@@ -26,6 +28,7 @@
   "dependencies": {
     "@hono/node-server": "^1.4.0",
     "@hono/zod-validator": "^0.1.11",
+    "@modelcontextprotocol/sdk": "^1.13.3",
     "@slack/bolt": "^3.17.0",
     "better-sqlite3": "^9.2.2",
     "dotenv": "^16.3.1",

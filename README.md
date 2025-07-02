@@ -1,12 +1,12 @@
 # ccapproval - Claude Code Approval
 
-## Usage
+## USAGE
 
 ```shell
 $ claude --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
 ```
 
-## Installation
+## INSTALLATION
 
 CLI:
 
@@ -36,18 +36,18 @@ JSON:
 }
 ```
 
-## Notice
+## NOTICE
 
 - The `--permission-prompt-tool` option only works in non-interactive mode in combination with the `-p` flag. It does not work in interactive mode.
 - Hooks are available in interactive mode, but due to a one-minute timeout, there is a high possibility that the approval process will exceed the timeout period, so this tool does not currently support it.
 
-## Tips
+## TIPS
 
 ```shell
 alias claude-p='claude --permission-prompt-tool mcp__ccapproval__tool-approval -p'
 ```
 
-## Troubleshooting
+## TROUBLESHOOTING
 
 | Issue | Solution |
 |-------|----------|
@@ -55,7 +55,7 @@ alias claude-p='claude --permission-prompt-tool mcp__ccapproval__tool-approval -
 | Auth errors | Check token format and whitespace |
 | Channel not found | Remove `#` from channel name |
 
-## Slack Setup
+## SLACK SETUP
 
 ### 1. Create Slack App
 

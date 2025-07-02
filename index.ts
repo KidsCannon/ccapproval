@@ -19,7 +19,7 @@ import { debug } from "./src/utils.ts";
 import type { ApprovalRequest } from "./types.ts";
 
 const NAME = "ccapproval";
-const DANGEROUS_TOOLS = ["Bash", "Write", "Edit", "MultiEdit"];
+const _DANGEROUS_TOOLS = ["Bash", "Write", "Edit", "MultiEdit"];
 const APPROVAL_TIMEOUT = 12 * 60 * 60 * 1000; // 12 hours
 
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
@@ -53,21 +53,21 @@ async function handlePermissionPrompt(
 		}
 
 		// Check if tool is dangerous
-		debug("received tool", args.tool_name);
-		if (!DANGEROUS_TOOLS.includes(args.tool_name)) {
-			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify({
-							decision: "approve",
-							reason: "Safe tool - automatic approval",
-							timestamp: new Date().toISOString(),
-						}),
-					},
-				],
-			};
-		}
+		debug("received tool", args.tool_name, args);
+		// if (!DANGEROUS_TOOLS.includes(args.tool_name)) {
+		// 	return {
+		// 		content: [
+		// 			{
+		// 				type: "text",
+		// 				text: JSON.stringify({
+		// 					decision: "approve",
+		// 					reason: "Safe tool - automatic approval",
+		// 					timestamp: new Date().toISOString(),
+		// 				}),
+		// 			},
+		// 		],
+		// 	};
+		// }
 
 		// Create approval request
 		const approval: ApprovalRequest = {
@@ -76,7 +76,6 @@ async function handlePermissionPrompt(
 			parameters: args.input,
 			status: "pending",
 		};
-
 		approvals.set(approval.id, approval);
 
 		// Send Slack notification
@@ -85,12 +84,13 @@ async function handlePermissionPrompt(
 			args.input,
 			approval.id,
 		);
+		debug("Sending Slack message", message);
 		await slackApp.client.chat.postMessage({
 			channel,
 			...message,
 		});
 
-		// Wait for decision with timeout
+		debug("Waiting for decision", approval.id);
 		const decision = await waitForDecision(approval.id);
 
 		return {
@@ -133,6 +133,7 @@ async function waitForDecision(id: string): Promise<ApprovalRequest> {
 				return;
 			}
 
+			debug("Resolving approval", approval);
 			resolver.resolve(approval);
 			pendingResolvers.delete(id);
 		}, APPROVAL_TIMEOUT);

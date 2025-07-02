@@ -47,4 +47,4 @@ tmp/
 temp/
 
 # Claude Code
-.claude/*.local.json
+.claude/mcp.*.json

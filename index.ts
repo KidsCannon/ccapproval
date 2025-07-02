@@ -38,129 +38,6 @@ function debug(...args: unknown[]) {
   console.error(...args);
 }
 
-// Slack のハンドラー設定
-function setupSlackHandlers() {
-  // Handle approve button
-  slackApp.action<bolt.BlockAction>('approve', async ({ body, ack, action, client }) => {
-    await ack();
-    
-    if ('value' in action && action.value) {
-      const approval = approvals.get(action.value);
-      if (approval && approval.status === 'pending') {
-        approval.status = 'approved';
-        approval.decidedBy = body.user.id;
-        approval.decidedAt = new Date();
-        approval.reason = 'Approved via Slack';
-
-        // Notify waiting promise
-        const resolver = pendingResolvers.get(action.value);
-        if (resolver) {
-          resolver.resolve(approval);
-          pendingResolvers.delete(action.value);
-        }
-
-        // Update Slack message
-        if (body.message?.ts) {
-          await client.chat.update({
-            channel: body.channel?.id || SLACK_CHANNEL_NAME || '',
-            ts: body.message.ts,
-            text: `✅ Tool execution approved by <@${body.user.id}>`,
-            blocks: [
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: `✅ *Tool execution approved*\n\n*Tool:* ${approval.toolName}\n*Arguments:* ${JSON.stringify(approval.parameters, null, 2)}\n*Decided by:* <@${body.user.id}>\n*Time:* ${new Date().toISOString()}`
-                }
-              }
-            ]
-          });
-        }
-      }
-    }
-  });
-
-  // Handle reject button
-  slackApp.action<bolt.BlockAction>('reject', async ({ body, ack, action, client }) => {
-    await ack();
-    
-    if ('value' in action && action.value) {
-      const approval = approvals.get(action.value);
-      if (approval && approval.status === 'pending') {
-        approval.status = 'rejected';
-        approval.decidedBy = body.user.id;
-        approval.decidedAt = new Date();
-        approval.reason = 'Rejected via Slack';
-
-        // Notify waiting promise
-        const resolver = pendingResolvers.get(action.value);
-        if (resolver) {
-          resolver.resolve(approval);
-          pendingResolvers.delete(action.value);
-        }
-
-        // Update Slack message
-        if (body.message?.ts) {
-          await client.chat.update({
-            channel: body.channel?.id || SLACK_CHANNEL_NAME || '',
-            ts: body.message.ts,
-            text: `❌ Tool execution rejected by <@${body.user.id}>`,
-            blocks: [
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: `❌ *Tool execution rejected*\n\n*Tool:* ${approval.toolName}\n*Decided by:* <@${body.user.id}>\n*Time:* ${new Date().toISOString()}`
-                }
-              }
-            ]
-          });
-        }
-      }
-    }
-  });
-}
-
-// ツールハンドラーの設定
-function setupToolHandlers() {
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return {
-      tools: [
-        {
-          name: 'tool-approval',
-          description: 'Request approval for dangerous tool usage with Slack notification',
-          inputSchema: {
-            type: 'object',
-            properties: {
-              tool_name: {
-                type: 'string',
-                description: 'Name of the tool requiring approval',
-              },
-              input: {
-                type: 'object',
-                description: 'Parameters being passed to the tool',
-              },
-            },
-            required: ['tool_name', 'input'],
-          },
-        },
-      ],
-    };
-  });
-
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    switch (request.params.name) {
-      case 'tool-approval':
-        return await handleToolApproval(request.params.arguments || {});
-      default:
-        throw new McpError(
-          ErrorCode.MethodNotFound,
-          `Unknown tool: ${request.params.name}`
-        );
-    }
-  });
-}
-
 // ツール承認の処理
 async function handleToolApproval(args: any) {
   try {
@@ -313,9 +190,122 @@ async function init() {
     socketMode: true,
   });
 
-  // Setup handlers
-  setupSlackHandlers();
-  setupToolHandlers();
+  // Handle approve button
+  slackApp.action<bolt.BlockAction>('approve', async ({ body, ack, action, client }) => {
+    await ack();
+    
+    if ('value' in action && action.value) {
+      const approval = approvals.get(action.value);
+      if (approval && approval.status === 'pending') {
+        approval.status = 'approved';
+        approval.decidedBy = body.user.id;
+        approval.decidedAt = new Date();
+        approval.reason = 'Approved via Slack';
+
+        // Notify waiting promise
+        const resolver = pendingResolvers.get(action.value);
+        if (resolver) {
+          resolver.resolve(approval);
+          pendingResolvers.delete(action.value);
+        }
+
+        // Update Slack message
+        if (body.message?.ts) {
+          await client.chat.update({
+            channel: body.channel?.id || SLACK_CHANNEL_NAME || '',
+            ts: body.message.ts,
+            text: `✅ Tool execution approved by <@${body.user.id}>`,
+            blocks: [
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `✅ *Tool execution approved*\n\n*Tool:* ${approval.toolName}\n*Arguments:* ${JSON.stringify(approval.parameters, null, 2)}\n*Decided by:* <@${body.user.id}>\n*Time:* ${new Date().toISOString()}`
+                }
+              }
+            ]
+          });
+        }
+      }
+    }
+  });
+
+  // Handle reject button
+  slackApp.action<bolt.BlockAction>('reject', async ({ body, ack, action, client }) => {
+    await ack();
+    
+    if ('value' in action && action.value) {
+      const approval = approvals.get(action.value);
+      if (approval && approval.status === 'pending') {
+        approval.status = 'rejected';
+        approval.decidedBy = body.user.id;
+        approval.decidedAt = new Date();
+        approval.reason = 'Rejected via Slack';
+
+        // Notify waiting promise
+        const resolver = pendingResolvers.get(action.value);
+        if (resolver) {
+          resolver.resolve(approval);
+          pendingResolvers.delete(action.value);
+        }
+
+        // Update Slack message
+        if (body.message?.ts) {
+          await client.chat.update({
+            channel: body.channel?.id || SLACK_CHANNEL_NAME || '',
+            ts: body.message.ts,
+            text: `❌ Tool execution rejected by <@${body.user.id}>`,
+            blocks: [
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `❌ *Tool execution rejected*\n\n*Tool:* ${approval.toolName}\n*Decided by:* <@${body.user.id}>\n*Time:* ${new Date().toISOString()}`
+                }
+              }
+            ]
+          });
+        }
+      }
+    }
+  });
+  
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    return {
+      tools: [
+        {
+          name: 'tool-approval',
+          description: 'Request approval for dangerous tool usage with Slack notification',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              tool_name: {
+                type: 'string',
+                description: 'Name of the tool requiring approval',
+              },
+              input: {
+                type: 'object',
+                description: 'Parameters being passed to the tool',
+              },
+            },
+            required: ['tool_name', 'input'],
+          },
+        },
+      ],
+    };
+  });
+
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    switch (request.params.name) {
+      case 'tool-approval':
+        return await handleToolApproval(request.params.arguments || {});
+      default:
+        throw new McpError(
+          ErrorCode.MethodNotFound,
+          `Unknown tool: ${request.params.name}`
+        );
+    }
+  });
 }
 
 // サーバーの実行

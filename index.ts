@@ -10,6 +10,13 @@ import {
 	McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import bolt from "@slack/bolt";
+import type { ApprovalRequest } from "./types.js";
+import { debug } from "./src/utils.js";
+import {
+	createApprovalRequestMessage,
+	createApprovedMessage,
+	createRejectedMessage,
+} from "./src/slack-messages.js";
 
 const NAME = "ccapproval";
 const DANGEROUS_TOOLS = ["Bash", "Write", "Edit", "MultiEdit"];
@@ -19,26 +26,11 @@ const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
 const SLACK_APP_TOKEN = process.env.SLACK_APP_TOKEN;
 const SLACK_CHANNEL_NAME = process.env.SLACK_CHANNEL_NAME;
 
-interface ApprovalRequest {
-	id: string;
-	toolName: string;
-	parameters: unknown;
-	status: "pending" | "approved" | "rejected" | "timeout";
-	decidedBy?: string;
-	decidedAt?: Date;
-	reason?: string;
-}
-
 const approvals = new Map<string, ApprovalRequest>();
 const pendingResolvers = new Map<
 	string,
 	{ resolve: (value: ApprovalRequest) => void }
 >();
-
-// Debug logging for MCP Server
-function debug(...args: unknown[]) {
-	console.error(...args);
-}
 
 async function handlePermissionPrompt(
 	slackApp: bolt.App,
@@ -88,43 +80,14 @@ async function handlePermissionPrompt(
 		approvals.set(approval.id, approval);
 
 		// Send Slack notification
+		const message = createApprovalRequestMessage(
+			args.tool_name,
+			args.input,
+			approval.id,
+		);
 		await slackApp.client.chat.postMessage({
 			channel,
-			text: `🔧 Tool execution approval requested: ${args.tool_name}`,
-			blocks: [
-				{
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: `🔧 *Tool execution approval requested*\n\n*Tool:* ${args.tool_name}\n*Parameters:*\n\`\`\`${JSON.stringify(args.input, null, 2)}\`\`\``,
-					},
-				},
-				{
-					type: "actions",
-					elements: [
-						{
-							type: "button",
-							text: {
-								type: "plain_text",
-								text: "✅ Approve",
-							},
-							style: "primary",
-							action_id: "approve",
-							value: approval.id,
-						},
-						{
-							type: "button",
-							text: {
-								type: "plain_text",
-								text: "❌ Reject",
-							},
-							style: "danger",
-							action_id: "reject",
-							value: approval.id,
-						},
-					],
-				},
-			],
+			...message,
 		});
 
 		// Wait for decision with timeout
@@ -233,19 +196,11 @@ async function run() {
 				return;
 			}
 
+			const message = createApprovedMessage(approval, body.user.id);
 			await client.chat.update({
 				channel: body.channel?.id ?? SLACK_CHANNEL_NAME,
 				ts: body.message.ts,
-				text: `✅ Tool execution approved by <@${body.user.id}>`,
-				blocks: [
-					{
-						type: "section",
-						text: {
-							type: "mrkdwn",
-							text: `✅ *Tool execution approved*\n\n*Tool:* ${approval.toolName}\n*Arguments:* ${JSON.stringify(approval.parameters, null, 2)}\n*Decided by:* <@${body.user.id}>\n*Time:* ${new Date().toISOString()}`,
-						},
-					},
-				],
+				...message,
 			});
 		},
 	);
@@ -282,19 +237,11 @@ async function run() {
 				return;
 			}
 
+			const message = createRejectedMessage(approval, body.user.id);
 			await client.chat.update({
 				channel: body.channel?.id ?? SLACK_CHANNEL_NAME,
 				ts: body.message.ts,
-				text: `❌ Tool execution rejected by <@${body.user.id}>`,
-				blocks: [
-					{
-						type: "section",
-						text: {
-							type: "mrkdwn",
-							text: `❌ *Tool execution rejected*\n\n*Tool:* ${approval.toolName}\n*Decided by:* <@${body.user.id}>\n*Time:* ${new Date().toISOString()}`,
-						},
-					},
-				],
+				...message,
 			});
 		},
 	);

@@ -11,8 +11,6 @@
     "test": "vitest --no-watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "lint": "eslint src --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [

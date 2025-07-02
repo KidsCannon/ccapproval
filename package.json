@@ -5,6 +5,7 @@
 	"type": "module",
 	"main": "dist/index.js",
 	"scripts": {
+		"check": "biome check .",
 		"test": "vitest --no-watch",
 		"typecheck": "tsc --noEmit"
 	},

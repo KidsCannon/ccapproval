@@ -10,13 +10,13 @@ import {
 	McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import bolt from "@slack/bolt";
-import type { ApprovalRequest } from "./types.js";
-import { debug } from "./src/utils.js";
 import {
 	createApprovalRequestMessage,
 	createApprovedMessage,
 	createRejectedMessage,
 } from "./src/slack-messages.js";
+import { debug } from "./src/utils.js";
+import type { ApprovalRequest } from "./types.js";
 
 const NAME = "ccapproval";
 const DANGEROUS_TOOLS = ["Bash", "Write", "Edit", "MultiEdit"];

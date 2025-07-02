@@ -25,13 +25,13 @@ describe("slack-messages", () => {
 			// Check section block
 			const sectionBlock = result.blocks[0];
 			expect(sectionBlock.type).toBe("section");
-			expect(sectionBlock.text.type).toBe("mrkdwn");
-			expect(sectionBlock.text.text).toContain(
+			expect(sectionBlock.text?.type).toBe("mrkdwn");
+			expect(sectionBlock.text?.text).toContain(
 				"🔧 *Tool execution approval requested*",
 			);
-			expect(sectionBlock.text.text).toContain("*Tool:* Bash");
-			expect(sectionBlock.text.text).toContain("*Parameters:*");
-			expect(sectionBlock.text.text).toContain(
+			expect(sectionBlock.text?.text).toContain("*Tool:* Bash");
+			expect(sectionBlock.text?.text).toContain("*Parameters:*");
+			expect(sectionBlock.text?.text).toContain(
 				JSON.stringify(parameters, null, 2),
 			);
 
@@ -41,22 +41,22 @@ describe("slack-messages", () => {
 			expect(actionsBlock.elements).toHaveLength(2);
 
 			// Check approve button
-			const approveButton = actionsBlock.elements[0];
-			expect(approveButton.type).toBe("button");
-			expect(approveButton.text.type).toBe("plain_text");
-			expect(approveButton.text.text).toBe("✅ Approve");
-			expect(approveButton.style).toBe("primary");
-			expect(approveButton.action_id).toBe("approve");
-			expect(approveButton.value).toBe(approvalId);
+			const approveButton = actionsBlock.elements?.[0];
+			expect(approveButton?.type).toBe("button");
+			expect(approveButton?.text?.type).toBe("plain_text");
+			expect(approveButton?.text?.text).toBe("✅ Approve");
+			expect(approveButton?.style).toBe("primary");
+			expect(approveButton?.action_id).toBe("approve");
+			expect(approveButton?.value).toBe(approvalId);
 
 			// Check reject button
-			const rejectButton = actionsBlock.elements[1];
-			expect(rejectButton.type).toBe("button");
-			expect(rejectButton.text.type).toBe("plain_text");
-			expect(rejectButton.text.text).toBe("❌ Reject");
-			expect(rejectButton.style).toBe("danger");
-			expect(rejectButton.action_id).toBe("reject");
-			expect(rejectButton.value).toBe(approvalId);
+			const rejectButton = actionsBlock.elements?.[1];
+			expect(rejectButton?.type).toBe("button");
+			expect(rejectButton?.text?.type).toBe("plain_text");
+			expect(rejectButton?.text?.text).toBe("❌ Reject");
+			expect(rejectButton?.style).toBe("danger");
+			expect(rejectButton?.action_id).toBe("reject");
+			expect(rejectButton?.value).toBe(approvalId);
 		});
 	});
 

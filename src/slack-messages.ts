@@ -41,7 +41,7 @@ export function createApprovalRequestMessage(
 				],
 			},
 		],
-	} as const;
+	};
 }
 
 export function createApprovedMessage(

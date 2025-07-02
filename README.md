@@ -57,32 +57,9 @@ alias claude-p='claude --permission-prompt-tool mcp__ccapproval__tool-approval -
 
 ## SLACK SETUP
 
-### 1. Create Slack App
-
-1. Go to https://api.slack.com/apps
-2. Create New App → From scratch
-3. Name: `ccapproval`, select workspace
-
-### 2. Enable Socket Mode
-
-Settings → Socket Mode → Enable
-
-### 3. Generate App-Level Token
-
-1. Settings → Basic Information → App-Level Tokens
-2. Generate Token and Scopes
-3. Add scope: `connections:write`
-4. Generate and save token (`xapp-...`)
-
-### 4. Configure Bot Token
-1. Features → OAuth & Permissions
-2. Add Bot Token Scopes:
-   - `chat:write`
-   - `chat:write.public`
-3. Install to Workspace
-4. Save Bot User OAuth Token (`xoxb-...`)
-
-### 5. Enable Interactivity
-
-Features → Interactivity & Shortcuts → Enable
+1. Create App: https://api.slack.com/apps → New App → From scratch → Name: `ccapproval`
+2. Socket Mode: Settings → Socket Mode → Enable
+3. App Token: Basic Information → App-Level Tokens → Add `connections:write` scope → Save `xapp-...`
+4. Bot Token: OAuth & Permissions → Add scopes (`chat:write`, `chat:write.public`) → Install → Save `xoxb-...`
+5. Interactivity: Interactivity & Shortcuts → Enable
 

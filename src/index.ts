@@ -95,18 +95,25 @@ async function handlePermissionPrompt(
 		const decision = await waitForDecision(approval.id);
 		debug("Decision:", decision);
 
-		return {
+		const res = {
 			content: [
 				{
 					type: "text",
 					text: JSON.stringify({
-						decision: decision.status === "approved" ? "approve" : "block",
-						reason: decision.reason || `Decision: ${decision.status}`,
-						timestamp: new Date().toISOString(),
+						behavior: decision.status === "approved" ? "allow" : "deny",
+						updatedInput:
+							decision.status === "approved" ? args.input : undefined,
+						message:
+							decision.status === "approved"
+								? undefined
+								: `Denied via Slack: ${decision.reason}`,
 					}),
 				},
 			],
 		};
+		debug("Returning response", res);
+
+		return res;
 	} catch (error) {
 		debug("Approval process failed", error);
 		throw new McpError(

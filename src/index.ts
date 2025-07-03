@@ -328,6 +328,17 @@ async function run() {
 	const transport = new StdioServerTransport();
 	await server.connect(transport);
 	debug("🚀 MCP server connected and ready");
+
+	// Handle stdin close to exit gracefully when Claude terminates
+	process.stdin.on('end', () => {
+		debug("Claude process ended, shutting down...");
+		process.exit(0);
+	});
+
+	process.stdin.on('close', () => {
+		debug("stdin closed, shutting down...");
+		process.exit(0);
+	});
 }
 
 run().catch((error) => {

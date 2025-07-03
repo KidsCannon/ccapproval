@@ -19,7 +19,7 @@ import type { ApprovalRequest } from "./types.ts";
 import { debug } from "./utils.ts";
 
 const NAME = "ccapproval";
-const _DANGEROUS_TOOLS = ["Bash", "Write", "Edit", "MultiEdit"];
+// const DANGEROUS_TOOLS = ["Bash", "Write", "Edit", "MultiEdit"];
 const APPROVAL_TIMEOUT = 12 * 60 * 60 * 1000; // 12 hours
 
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
@@ -330,12 +330,12 @@ async function run() {
 	debug("🚀 MCP server connected and ready");
 
 	// Handle stdin close to exit gracefully when Claude terminates
-	process.stdin.on('end', () => {
+	process.stdin.on("end", () => {
 		debug("Claude process ended, shutting down...");
 		process.exit(0);
 	});
 
-	process.stdin.on('close', () => {
+	process.stdin.on("close", () => {
 		debug("stdin closed, shutting down...");
 		process.exit(0);
 	});

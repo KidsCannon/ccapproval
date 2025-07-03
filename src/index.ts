@@ -205,14 +205,6 @@ async function run() {
 			approval.decidedAt = new Date();
 			approval.reason = "Approved via Slack";
 
-			// Notify waiting promise
-			const resolver = pendingResolvers.get(action.value);
-			if (resolver) {
-				debug("resolving", approval);
-				resolver.resolve(approval);
-				pendingResolvers.delete(action.value);
-			}
-
 			// Update Slack message
 			if (!body.message?.ts) {
 				return;
@@ -226,6 +218,14 @@ async function run() {
 				ts: body.message.ts,
 				...message,
 			});
+
+			// Notify waiting promise
+			const resolver = pendingResolvers.get(action.value);
+			if (resolver) {
+				debug("resolving", approval);
+				resolver.resolve(approval);
+				pendingResolvers.delete(action.value);
+			}
 		},
 	);
 
@@ -256,14 +256,6 @@ async function run() {
 			approval.decidedAt = new Date();
 			approval.reason = "Rejected via Slack";
 
-			// Notify waiting promise
-			const resolver = pendingResolvers.get(action.value);
-			if (resolver) {
-				debug("resolving", approval);
-				resolver.resolve(approval);
-				pendingResolvers.delete(action.value);
-			}
-
 			// Update Slack message
 			if (!body.message?.ts) {
 				return;
@@ -277,6 +269,14 @@ async function run() {
 				ts: body.message.ts,
 				...message,
 			});
+
+			// Notify waiting promise
+			const resolver = pendingResolvers.get(action.value);
+			if (resolver) {
+				debug("resolving", approval);
+				resolver.resolve(approval);
+				pendingResolvers.delete(action.value);
+			}
 		},
 	);
 

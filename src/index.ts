@@ -32,12 +32,130 @@ const pendingResolvers = new Map<
 	{ resolve: (value: ApprovalRequest) => void }
 >();
 
-async function handlePermissionPrompt(
-	slackApp: bolt.App,
-	channel: string,
-	args: unknown,
-) {
+async function handlePermissionPrompt(channel: string, args: unknown) {
+	const slackApp = new bolt.App({
+		logLevel: bolt.LogLevel.ERROR,
+		logger: {
+			debug,
+			info: debug,
+			warn: debug,
+			error: debug,
+			setLevel: () => {},
+			getLevel: () => bolt.LogLevel.ERROR,
+			setName: () => {},
+		},
+		token: SLACK_BOT_TOKEN,
+		appToken: SLACK_APP_TOKEN,
+		socketMode: true,
+	});
+
 	try {
+		// Handle approve button
+		slackApp.action<bolt.BlockAction>(
+			"approve",
+			async ({ body, ack, action, client }) => {
+				debug("on approve", body, action);
+
+				await ack();
+
+				if (!("value" in action) || !action.value) {
+					return;
+				}
+
+				const approval = approvals.get(action.value);
+				debug("finding approval", {
+					actionValue: action.value,
+					approval,
+					allApprovals: Array.from(approvals.entries()),
+				});
+				if (!approval || approval.status !== "pending") {
+					return;
+				}
+
+				debug("approving", approval);
+				approval.status = "approved";
+				approval.decidedBy = body.user.id;
+				approval.decidedAt = new Date();
+				approval.reason = "Approved via Slack";
+
+				// Update Slack message
+				if (!body.message?.ts) {
+					return;
+				}
+
+				debug("updating slack message", approval);
+				const message = createApprovedMessage(approval, body.user.id);
+				debug("updating slack message", message);
+				await client.chat.update({
+					channel: body.channel?.id ?? channel,
+					ts: body.message.ts,
+					...message,
+				});
+
+				// Notify waiting promise
+				const resolver = pendingResolvers.get(action.value);
+				if (resolver) {
+					debug("resolving", approval);
+					resolver.resolve(approval);
+					pendingResolvers.delete(action.value);
+				}
+			},
+		);
+
+		// Handle reject button
+		slackApp.action<bolt.BlockAction>(
+			"reject",
+			async ({ body, ack, action, client }) => {
+				debug("on reject", body, action);
+				await ack();
+
+				if (!("value" in action) || !action.value) {
+					return;
+				}
+
+				const approval = approvals.get(action.value);
+				debug("finding approval", {
+					actionValue: action.value,
+					approval,
+					allApprovals: Array.from(approvals.entries()),
+				});
+				if (!approval || approval.status !== "pending") {
+					return;
+				}
+
+				debug("rejecting", approval);
+				approval.status = "rejected";
+				approval.decidedBy = body.user.id;
+				approval.decidedAt = new Date();
+				approval.reason = "Rejected via Slack";
+
+				// Update Slack message
+				if (!body.message?.ts) {
+					return;
+				}
+
+				debug("updating slack message", approval);
+				const message = createRejectedMessage(approval, body.user.id);
+				debug("updating slack message", message);
+				await client.chat.update({
+					channel: body.channel?.id ?? channel,
+					ts: body.message.ts,
+					...message,
+				});
+
+				// Notify waiting promise
+				const resolver = pendingResolvers.get(action.value);
+				if (resolver) {
+					debug("resolving", approval);
+					resolver.resolve(approval);
+					pendingResolvers.delete(action.value);
+				}
+			},
+		);
+
+		await slackApp.start();
+		debug("⚡️ Slack app is running");
+
 		if (typeof args !== "object" || args == null) {
 			throw new McpError(ErrorCode.InvalidParams, "Invalid arguments");
 		}
@@ -120,10 +238,11 @@ async function handlePermissionPrompt(
 			ErrorCode.InternalError,
 			`Approval process failed: ${error instanceof Error ? error.message : "Unknown error"}`,
 		);
+	} finally {
+		await slackApp.stop();
 	}
 }
 
-// 承認の決定を待つ
 async function waitForDecision(id: string): Promise<ApprovalRequest> {
 	return new Promise((resolve) => {
 		pendingResolvers.set(id, { resolve });
@@ -150,8 +269,11 @@ async function waitForDecision(id: string): Promise<ApprovalRequest> {
 	});
 }
 
-// サーバーの実行
 async function run() {
+	if (!SLACK_BOT_TOKEN || !SLACK_APP_TOKEN || !SLACK_CHANNEL_NAME) {
+		throw new Error("Missing required environment variables");
+	}
+
 	const server = new Server(
 		{
 			name: NAME,
@@ -164,128 +286,21 @@ async function run() {
 		},
 	);
 
-	if (!SLACK_BOT_TOKEN || !SLACK_APP_TOKEN || !SLACK_CHANNEL_NAME) {
-		throw new Error("Missing required environment variables");
-	}
-
-	const slackApp = new bolt.App({
-		logLevel: bolt.LogLevel.ERROR,
-		logger: {
-			debug,
-			info: debug,
-			warn: debug,
-			error: debug,
-			setLevel: () => {},
-			getLevel: () => bolt.LogLevel.ERROR,
-			setName: () => {},
-		},
-		token: SLACK_BOT_TOKEN,
-		appToken: SLACK_APP_TOKEN,
-		socketMode: true,
+	server.setRequestHandler(CallToolRequestSchema, async (request) => {
+		switch (request.params.name) {
+			case "tool-approval": {
+				return await handlePermissionPrompt(
+					SLACK_CHANNEL_NAME,
+					request.params.arguments || {},
+				);
+			}
+			default:
+				throw new McpError(
+					ErrorCode.MethodNotFound,
+					`Unknown tool: ${request.params.name}`,
+				);
+		}
 	});
-
-	// Handle approve button
-	slackApp.action<bolt.BlockAction>(
-		"approve",
-		async ({ body, ack, action, client }) => {
-			debug("on approve", body, action);
-
-			await ack();
-
-			if (!("value" in action) || !action.value) {
-				return;
-			}
-
-			const approval = approvals.get(action.value);
-			debug("finding approval", {
-				actionValue: action.value,
-				approval,
-				allApprovals: Array.from(approvals.entries()),
-			});
-			if (!approval || approval.status !== "pending") {
-				return;
-			}
-
-			debug("approving", approval);
-			approval.status = "approved";
-			approval.decidedBy = body.user.id;
-			approval.decidedAt = new Date();
-			approval.reason = "Approved via Slack";
-
-			// Update Slack message
-			if (!body.message?.ts) {
-				return;
-			}
-
-			debug("updating slack message", approval);
-			const message = createApprovedMessage(approval, body.user.id);
-			debug("updating slack message", message);
-			await client.chat.update({
-				channel: body.channel?.id ?? SLACK_CHANNEL_NAME,
-				ts: body.message.ts,
-				...message,
-			});
-
-			// Notify waiting promise
-			const resolver = pendingResolvers.get(action.value);
-			if (resolver) {
-				debug("resolving", approval);
-				resolver.resolve(approval);
-				pendingResolvers.delete(action.value);
-			}
-		},
-	);
-
-	// Handle reject button
-	slackApp.action<bolt.BlockAction>(
-		"reject",
-		async ({ body, ack, action, client }) => {
-			debug("on reject", body, action);
-			await ack();
-
-			if (!("value" in action) || !action.value) {
-				return;
-			}
-
-			const approval = approvals.get(action.value);
-			debug("finding approval", {
-				actionValue: action.value,
-				approval,
-				allApprovals: Array.from(approvals.entries()),
-			});
-			if (!approval || approval.status !== "pending") {
-				return;
-			}
-
-			debug("rejecting", approval);
-			approval.status = "rejected";
-			approval.decidedBy = body.user.id;
-			approval.decidedAt = new Date();
-			approval.reason = "Rejected via Slack";
-
-			// Update Slack message
-			if (!body.message?.ts) {
-				return;
-			}
-
-			debug("updating slack message", approval);
-			const message = createRejectedMessage(approval, body.user.id);
-			debug("updating slack message", message);
-			await client.chat.update({
-				channel: body.channel?.id ?? SLACK_CHANNEL_NAME,
-				ts: body.message.ts,
-				...message,
-			});
-
-			// Notify waiting promise
-			const resolver = pendingResolvers.get(action.value);
-			if (resolver) {
-				debug("resolving", approval);
-				resolver.resolve(approval);
-				pendingResolvers.delete(action.value);
-			}
-		},
-	);
 
 	server.setRequestHandler(ListToolsRequestSchema, async () => {
 		return {
@@ -312,25 +327,6 @@ async function run() {
 			],
 		};
 	});
-
-	server.setRequestHandler(CallToolRequestSchema, async (request) => {
-		switch (request.params.name) {
-			case "tool-approval":
-				return await handlePermissionPrompt(
-					slackApp,
-					SLACK_CHANNEL_NAME,
-					request.params.arguments || {},
-				);
-			default:
-				throw new McpError(
-					ErrorCode.MethodNotFound,
-					`Unknown tool: ${request.params.name}`,
-				);
-		}
-	});
-
-	await slackApp.start();
-	debug("⚡️ Slack app is running");
 
 	const transport = new StdioServerTransport();
 	await server.connect(transport);

@@ -77,6 +77,7 @@ async function handlePermissionPrompt(
 			status: "pending",
 		};
 		approvals.set(approval.id, approval);
+		debug("Created approval", { id: approval.id, toolName: approval.toolName });
 
 		// Send Slack notification
 		const message = createApprovalRequestMessage(
@@ -107,6 +108,7 @@ async function handlePermissionPrompt(
 			],
 		};
 	} catch (error) {
+		debug("Approval process failed", error);
 		throw new McpError(
 			ErrorCode.InternalError,
 			`Approval process failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -160,7 +162,16 @@ async function run() {
 	}
 
 	const slackApp = new bolt.App({
-		logLevel: bolt.LogLevel.DEBUG,
+		logLevel: bolt.LogLevel.ERROR,
+		logger: {
+			debug,
+			info: debug,
+			warn: debug,
+			error: debug,
+			setLevel: () => {},
+			getLevel: () => bolt.LogLevel.ERROR,
+			setName: () => {},
+		},
 		token: SLACK_BOT_TOKEN,
 		appToken: SLACK_APP_TOKEN,
 		socketMode: true,
@@ -179,6 +190,11 @@ async function run() {
 			}
 
 			const approval = approvals.get(action.value);
+			debug("finding approval", {
+				actionValue: action.value,
+				approval,
+				allApprovals: Array.from(approvals.entries()),
+			});
 			if (!approval || approval.status !== "pending") {
 				return;
 			}
@@ -225,6 +241,11 @@ async function run() {
 			}
 
 			const approval = approvals.get(action.value);
+			debug("finding approval", {
+				actionValue: action.value,
+				approval,
+				allApprovals: Array.from(approvals.entries()),
+			});
 			if (!approval || approval.status !== "pending") {
 				return;
 			}

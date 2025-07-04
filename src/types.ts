@@ -7,3 +7,5 @@ export interface ApprovalRequest {
 	decidedAt?: Date;
 	reason?: string;
 }
+
+export type { SessionThreadMapping } from "./storage";

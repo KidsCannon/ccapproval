@@ -27,6 +27,9 @@ const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
 const SLACK_APP_TOKEN = process.env.SLACK_APP_TOKEN;
 const SLACK_CHANNEL_NAME = process.env.SLACK_CHANNEL_NAME;
 
+// Generate session ID once per process
+const processSessionId = `claude-session-${randomUUID()}`;
+
 const approvals = new Map<string, ApprovalRequest>();
 const pendingResolvers = new Map<
 	string,
@@ -198,12 +201,8 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 		approvals.set(approval.id, approval);
 		debug("Created approval", { id: approval.id, toolName: approval.toolName });
 
-		// Extract session ID from args (required)
-		if (!("session_id" in args) || typeof args.session_id !== "string") {
-			throw new McpError(ErrorCode.InvalidParams, "session_id is required");
-		}
-		
-		const sessionId = args.session_id;
+		// Use process-generated session ID
+		const sessionId = processSessionId;
 		debug("Using session ID:", sessionId);
 
 		// Check if we already have a thread for this session
@@ -216,14 +215,20 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 			args.input,
 			approval.id,
 		);
-		debug("Sending Slack message", { message, useThread: !!existingThread?.threadTs });
+		debug("Sending Slack message", {
+			message,
+			useThread: !!existingThread?.threadTs,
+		});
 
 		const postMessageResult = await slackApp.client.chat.postMessage({
 			channel,
 			...message,
 			thread_ts: existingThread?.threadTs, // Use existing thread if available
 		});
-		debug("Posted message result:", { ts: postMessageResult.ts, channel: postMessageResult.channel });
+		debug("Posted message result:", {
+			ts: postMessageResult.ts,
+			channel: postMessageResult.channel,
+		});
 
 		// If this is a new thread, store the mapping and add initial reaction
 		if (!existingThread && postMessageResult.ts && postMessageResult.channel) {
@@ -394,12 +399,8 @@ async function run() {
 								type: "object",
 								description: "Parameters being passed to the tool",
 							},
-							session_id: {
-								type: "string",
-								description: "Claude Code session identifier for thread grouping",
-							},
 						},
-						required: ["tool_name", "input", "session_id"],
+						required: ["tool_name", "input"],
 					},
 				},
 			],

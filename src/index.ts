@@ -198,21 +198,12 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 		approvals.set(approval.id, approval);
 		debug("Created approval", { id: approval.id, toolName: approval.toolName });
 
-		// Extract session ID from args (if available)
-		// Try multiple sources for session identification
-		let sessionId: string;
-		
-		if ("session_id" in args && typeof args.session_id === "string") {
-			sessionId = args.session_id;
-		} else if (process.env.CLAUDE_SESSION_ID) {
-			sessionId = process.env.CLAUDE_SESSION_ID;
-		} else if (process.env.MCP_SESSION_ID) {
-			sessionId = process.env.MCP_SESSION_ID;
-		} else {
-			// Use parent process ID as session identifier for Claude Code
-			sessionId = `claude-session-${process.ppid}`;
+		// Extract session ID from args (required)
+		if (!("session_id" in args) || typeof args.session_id !== "string") {
+			throw new McpError(ErrorCode.InvalidParams, "session_id is required");
 		}
 		
+		const sessionId = args.session_id;
 		debug("Using session ID:", sessionId);
 
 		// Check if we already have a thread for this session
@@ -403,8 +394,12 @@ async function run() {
 								type: "object",
 								description: "Parameters being passed to the tool",
 							},
+							session_id: {
+								type: "string",
+								description: "Claude Code session identifier for thread grouping",
+							},
 						},
-						required: ["tool_name", "input"],
+						required: ["tool_name", "input", "session_id"],
 					},
 				},
 			],

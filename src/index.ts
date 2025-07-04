@@ -15,6 +15,7 @@ import {
 	createApprovedMessage,
 	createRejectedMessage,
 } from "./slack-messages.ts";
+import { storage } from "./storage.ts";
 import type { ApprovalRequest } from "./types.ts";
 import { debug } from "./utils.ts";
 
@@ -197,6 +198,15 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 		approvals.set(approval.id, approval);
 		debug("Created approval", { id: approval.id, toolName: approval.toolName });
 
+		// Extract session ID from args (if available)
+		const sessionId =
+			"session_id" in args && typeof args.session_id === "string"
+				? args.session_id
+				: approval.id; // Fallback to approval ID if no session ID
+
+		// Check if we already have a thread for this session
+		const existingThread = await storage.get(sessionId);
+
 		// Send Slack notification
 		const message = createApprovalRequestMessage(
 			args.tool_name,
@@ -204,14 +214,69 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 			approval.id,
 		);
 		debug("Sending Slack message", message);
-		await slackApp.client.chat.postMessage({
+
+		const postMessageResult = await slackApp.client.chat.postMessage({
 			channel,
 			...message,
+			thread_ts: existingThread?.threadTs, // Use existing thread if available
 		});
+
+		// If this is a new thread, store the mapping and add initial reaction
+		if (!existingThread && postMessageResult.ts) {
+			await storage.create({
+				sessionId,
+				threadTs: postMessageResult.ts,
+				channelId: channel,
+				status: "executing",
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			});
+
+			// Add executing reaction to the root message
+			await slackApp.client.reactions.add({
+				channel,
+				timestamp: postMessageResult.ts,
+				name: "hourglass_flowing_sand",
+			});
+		}
 
 		debug("Waiting for decision", approval.id);
 		const decision = await waitForDecision(approval.id);
 		debug("Decision:", decision);
+
+		// Update thread status and reactions
+		if (postMessageResult.ts) {
+			const threadInfo = await storage.get(sessionId);
+			if (threadInfo) {
+				// Update storage status
+				const newStatus = decision.status === "approved" ? "done" : "failed";
+				await storage.update(sessionId, { status: newStatus });
+
+				// Remove executing reaction
+				try {
+					await slackApp.client.reactions.remove({
+						channel,
+						timestamp: threadInfo.threadTs,
+						name: "hourglass_flowing_sand",
+					});
+				} catch (error) {
+					debug("Failed to remove reaction:", error);
+				}
+
+				// Add final status reaction
+				const reactionName =
+					decision.status === "approved" ? "white_check_mark" : "x";
+				try {
+					await slackApp.client.reactions.add({
+						channel,
+						timestamp: threadInfo.threadTs,
+						name: reactionName,
+					});
+				} catch (error) {
+					debug("Failed to add reaction:", error);
+				}
+			}
+		}
 
 		const res = {
 			content: [

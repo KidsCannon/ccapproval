@@ -222,11 +222,11 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 		});
 
 		// If this is a new thread, store the mapping and add initial reaction
-		if (!existingThread && postMessageResult.ts) {
+		if (!existingThread && postMessageResult.ts && postMessageResult.channel) {
 			await storage.create({
 				sessionId,
 				threadTs: postMessageResult.ts,
-				channelId: channel,
+				channelId: postMessageResult.channel,
 				status: "executing",
 				createdAt: new Date().toISOString(),
 				updatedAt: new Date().toISOString(),
@@ -234,7 +234,7 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 
 			// Add executing reaction to the root message
 			await slackApp.client.reactions.add({
-				channel,
+				channel: postMessageResult.channel,
 				timestamp: postMessageResult.ts,
 				name: "hourglass_flowing_sand",
 			});
@@ -255,7 +255,7 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 				// Remove executing reaction
 				try {
 					await slackApp.client.reactions.remove({
-						channel,
+						channel: threadInfo.channelId,
 						timestamp: threadInfo.threadTs,
 						name: "hourglass_flowing_sand",
 					});
@@ -268,7 +268,7 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 					decision.status === "approved" ? "white_check_mark" : "x";
 				try {
 					await slackApp.client.reactions.add({
-						channel,
+						channel: threadInfo.channelId,
 						timestamp: threadInfo.threadTs,
 						name: reactionName,
 					});

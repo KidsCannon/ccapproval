@@ -199,13 +199,25 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 		debug("Created approval", { id: approval.id, toolName: approval.toolName });
 
 		// Extract session ID from args (if available)
-		const sessionId =
-			"session_id" in args && typeof args.session_id === "string"
-				? args.session_id
-				: approval.id; // Fallback to approval ID if no session ID
+		// Try multiple sources for session identification
+		let sessionId: string;
+		
+		if ("session_id" in args && typeof args.session_id === "string") {
+			sessionId = args.session_id;
+		} else if (process.env.CLAUDE_SESSION_ID) {
+			sessionId = process.env.CLAUDE_SESSION_ID;
+		} else if (process.env.MCP_SESSION_ID) {
+			sessionId = process.env.MCP_SESSION_ID;
+		} else {
+			// Use parent process ID as session identifier for Claude Code
+			sessionId = `claude-session-${process.ppid}`;
+		}
+		
+		debug("Using session ID:", sessionId);
 
 		// Check if we already have a thread for this session
 		const existingThread = await storage.get(sessionId);
+		debug("Existing thread for session:", { sessionId, existingThread });
 
 		// Send Slack notification
 		const message = createApprovalRequestMessage(
@@ -213,16 +225,18 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 			args.input,
 			approval.id,
 		);
-		debug("Sending Slack message", message);
+		debug("Sending Slack message", { message, useThread: !!existingThread?.threadTs });
 
 		const postMessageResult = await slackApp.client.chat.postMessage({
 			channel,
 			...message,
 			thread_ts: existingThread?.threadTs, // Use existing thread if available
 		});
+		debug("Posted message result:", { ts: postMessageResult.ts, channel: postMessageResult.channel });
 
 		// If this is a new thread, store the mapping and add initial reaction
 		if (!existingThread && postMessageResult.ts && postMessageResult.channel) {
+			debug("Creating new thread mapping");
 			await storage.create({
 				sessionId,
 				threadTs: postMessageResult.ts,
@@ -238,6 +252,10 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 				timestamp: postMessageResult.ts,
 				name: "hourglass_flowing_sand",
 			});
+		} else if (existingThread) {
+			debug("Using existing thread, updating status to executing");
+			// Update existing thread status to executing
+			await storage.update(sessionId, { status: "executing" });
 		}
 
 		debug("Waiting for decision", approval.id);

@@ -10,7 +10,7 @@ import {
 	McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import bolt from "@slack/bolt";
-import { button, markdownSection, message } from "./slack-messages.ts";
+import { button, markdownSection, plainText } from "./slack-messages.ts";
 import type { ApprovalRequest } from "./types.ts";
 import { debug } from "./utils.ts";
 
@@ -84,20 +84,20 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 				}
 
 				debug("updating slack message", approval);
-				const text = message({
+				const text = plainText({
 					type: "approved",
 					...approval,
 					userId: body.user.id,
 				});
-				const slackMessage = {
-					text,
+				const massage = {
+					text: text.split("\n")[0],
 					blocks: [markdownSection(text)],
 				};
-				debug("updating slack message", slackMessage);
+				debug("updating slack message", massage);
 				await client.chat.update({
 					channel: body.channel?.id ?? channel,
 					ts: body.message.ts,
-					...slackMessage,
+					...massage,
 				});
 
 				// Notify waiting promise
@@ -143,20 +143,20 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 				}
 
 				debug("updating slack message", approval);
-				const text = message({
+				const text = plainText({
 					type: "rejected",
 					...approval,
 					userId: body.user.id,
 				});
-				const slackMessage = {
-					text,
+				const massage = {
+					text: text.split("\n")[0],
 					blocks: [markdownSection(text)],
 				};
-				debug("updating slack message", slackMessage);
+				debug("updating slack message", massage);
 				await client.chat.update({
 					channel: body.channel?.id ?? channel,
 					ts: body.message.ts,
-					...slackMessage,
+					...massage,
 				});
 
 				// Notify waiting promise
@@ -214,13 +214,13 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 		debug("Created approval", { id: approval.id, toolName: approval.toolName });
 
 		// Send Slack notification
-		const text = message({
+		const text = plainText({
 			type: "requested",
 			toolName: args.tool_name,
 			parameters: args.input,
 		});
 		const slackMessage = {
-			text,
+			text: text.split("\n")[0],
 			blocks: [
 				markdownSection(text),
 				{

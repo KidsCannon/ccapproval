@@ -30,7 +30,7 @@ export const button = (args: {
 	};
 };
 
-export const message = (
+export const plainText = (
 	args:
 		| {
 				type: "requested";
@@ -44,29 +44,23 @@ export const message = (
 				userId: string;
 		  },
 ) => {
-	const headers = {
-		requested: "🔧 *Tool execution approval requested*",
-		approved: `✅ *Tool execution approved*`,
-		rejected: `❌ *Tool execution rejected*`,
-	};
-
-	const header =
-		args.type === "requested"
-			? headers[args.type]
-			: `${headers[args.type]}
-
-*Tool:* ${args.toolName}
-*Arguments:* ${JSON.stringify(args.parameters, null, 2)}
-*Decided by:* <@${args.userId}>
-*Time:* ${new Date().toISOString()}`;
-
-	if (args.type === "requested") {
-		return `${header}
-
-*Tool:* ${args.toolName}
-*Parameters:*
-${codeBlock(JSON.stringify(args.parameters, null, 2))}`;
+	let header: string;
+	switch (args.type) {
+		case "requested":
+			header = `🔧 *Tool execution approval requested*`;
+			break;
+		case "approved":
+			header = `✅ *Tool execution approved* by <@${args.userId}> at ${new Date().toISOString()}`;
+			break;
+		case "rejected":
+			header = `❌ *Tool execution rejected* by <@${args.userId}> at ${new Date().toISOString()}`;
+			break;
 	}
 
-	return header;
+	const res = `${header}
+
+*Tool:* ${args.toolName}
+*Parameters:* ${codeBlock(JSON.stringify(args.parameters, null, 2))}`;
+
+	return res;
 };

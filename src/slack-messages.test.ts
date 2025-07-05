@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { button, markdownSection, message } from "./slack-messages.ts";
+import { button, markdownSection, plainText } from "./slack-messages.ts";
 
 describe("slack-messages", () => {
 	describe("markdownSection", () => {
@@ -57,7 +57,7 @@ describe("slack-messages", () => {
 
 	describe("message", () => {
 		it("should create requested message with correct format", () => {
-			const result = message({
+			const result = plainText({
 				type: "requested",
 				toolName: "Bash",
 				parameters: { command: "ls -la" },
@@ -72,7 +72,7 @@ describe("slack-messages", () => {
 
 		it("should create approved message with user and timestamp", () => {
 			const beforeTime = new Date().toISOString();
-			const result = message({
+			const result = plainText({
 				type: "approved",
 				toolName: "Write",
 				parameters: { file: "test.txt" },
@@ -98,7 +98,7 @@ describe("slack-messages", () => {
 		});
 
 		it("should create rejected message with user and timestamp", () => {
-			const result = message({
+			const result = plainText({
 				type: "rejected",
 				toolName: "Edit",
 				parameters: { file: "config.json" },
@@ -121,7 +121,7 @@ describe("slack-messages", () => {
 				env: { NODE_ENV: "development" },
 			};
 
-			const result = message({
+			const result = plainText({
 				type: "requested",
 				toolName: "Bash",
 				parameters: complexParams,

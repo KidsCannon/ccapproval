@@ -33,6 +33,8 @@ const pendingResolvers = new Map<
 >();
 
 async function handlePermissionPrompt(channel: string, args: unknown) {
+	debug("handlePermissionPrompt", channel, args);
+
 	const slackApp = new bolt.App({
 		logLevel: bolt.LogLevel.ERROR,
 		logger: {
@@ -366,6 +368,8 @@ async function run() {
 	);
 
 	server.setRequestHandler(CallToolRequestSchema, async (request) => {
+		debug("CallToolRequestSchema", request);
+
 		switch (request.params.name) {
 			case "tool-approval": {
 				return await handlePermissionPrompt(
@@ -382,6 +386,7 @@ async function run() {
 	});
 
 	server.setRequestHandler(ListToolsRequestSchema, async () => {
+		debug("Listing tools");
 		return {
 			tools: [
 				{

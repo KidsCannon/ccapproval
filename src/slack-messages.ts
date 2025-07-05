@@ -60,7 +60,7 @@ export const plainText = (
 	const res = `${header}
 
 *Tool:* ${args.toolName}
-*Parameters:* ${codeBlock(JSON.stringify(args.parameters, null, 2))}`;
+*Parameters:* ${codeBlock(JSON.stringify(args.parameters, null, 2))}${args.cwd ? `\n*Working Directory:* ${args.cwd}` : ""}`;
 
 	return res;
 };

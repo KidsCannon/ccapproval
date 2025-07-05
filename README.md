@@ -39,7 +39,7 @@ JSON:
 ## NOTICE
 
 - The `--permission-prompt-tool` option only works in non-interactive mode in combination with the `-p` flag. It does not work in interactive mode.
-- Hooks are available in interactive mode, but due to a one-minute timeout, there is a high possibility that the approval process will exceed the timeout period, so this tool does not currently support it.
+- Hooks are available in interactive mode, but they cannot selectively react only when permission prompts are displayed during pre-use tool events, so this tool does not currently support it.
 
 ## TIPS
 

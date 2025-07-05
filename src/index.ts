@@ -10,11 +10,7 @@ import {
 	McpError,
 } from "@modelcontextprotocol/sdk/types.js";
 import bolt from "@slack/bolt";
-import {
-	createApprovalRequestMessage,
-	createApprovedMessage,
-	createRejectedMessage,
-} from "./slack-messages.ts";
+import { button, markdownSection, message } from "./slack-messages.ts";
 import type { ApprovalRequest } from "./types.ts";
 import { debug } from "./utils.ts";
 
@@ -88,12 +84,20 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 				}
 
 				debug("updating slack message", approval);
-				const message = createApprovedMessage(approval, body.user.id);
-				debug("updating slack message", message);
+				const text = message({
+					type: "approved",
+					...approval,
+					userId: body.user.id,
+				});
+				const slackMessage = {
+					text,
+					blocks: [markdownSection(text)],
+				};
+				debug("updating slack message", slackMessage);
 				await client.chat.update({
 					channel: body.channel?.id ?? channel,
 					ts: body.message.ts,
-					...message,
+					...slackMessage,
 				});
 
 				// Notify waiting promise
@@ -139,12 +143,20 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 				}
 
 				debug("updating slack message", approval);
-				const message = createRejectedMessage(approval, body.user.id);
-				debug("updating slack message", message);
+				const text = message({
+					type: "rejected",
+					...approval,
+					userId: body.user.id,
+				});
+				const slackMessage = {
+					text,
+					blocks: [markdownSection(text)],
+				};
+				debug("updating slack message", slackMessage);
 				await client.chat.update({
 					channel: body.channel?.id ?? channel,
 					ts: body.message.ts,
-					...message,
+					...slackMessage,
 				});
 
 				// Notify waiting promise
@@ -202,19 +214,32 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 		debug("Created approval", { id: approval.id, toolName: approval.toolName });
 
 		// Send Slack notification
-		const message = createApprovalRequestMessage(
-			args.tool_name,
-			args.input,
-			approval.id,
-		);
+		const text = message({
+			type: "requested",
+			toolName: args.tool_name,
+			parameters: args.input,
+		});
+		const slackMessage = {
+			text,
+			blocks: [
+				markdownSection(text),
+				{
+					type: "actions",
+					elements: [
+						button({ value: approval.id, actionId: "approve" }),
+						button({ value: approval.id, actionId: "reject" }),
+					],
+				},
+			],
+		};
 		debug("Sending Slack message", {
-			message,
+			message: slackMessage,
 			useThread: !!processThreadTs,
 		});
 
 		const postMessageResult = await slackApp.client.chat.postMessage({
 			channel,
-			...message,
+			...slackMessage,
 			thread_ts: processThreadTs, // Use existing thread if available
 		});
 		debug("Posted message result:", {

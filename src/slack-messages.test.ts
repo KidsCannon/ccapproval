@@ -1,158 +1,134 @@
 import { describe, expect, it } from "vitest";
-import {
-	createApprovalRequestMessage,
-	createApprovedMessage,
-	createRejectedMessage,
-} from "./slack-messages.ts";
-import type { ApprovalRequest } from "./types.ts";
+import { button, markdownSection, message } from "./slack-messages.ts";
 
 describe("slack-messages", () => {
-	describe("createApprovalRequestMessage", () => {
-		it("should create approval request message with correct structure", () => {
-			const toolName = "Bash";
-			const parameters = { command: "ls -la" };
-			const approvalId = "test-id-123";
+	describe("markdownSection", () => {
+		it("should create markdown section block", () => {
+			const text = "Test message *with markdown*";
+			const result = markdownSection(text);
 
-			const result = createApprovalRequestMessage(
-				toolName,
-				parameters,
-				approvalId,
-			);
-
-			expect(result.text).toBe("🔧 Tool execution approval requested: Bash");
-			expect(result.blocks).toHaveLength(2);
-
-			// Check section block
-			const sectionBlock = result.blocks[0];
-			expect(sectionBlock.type).toBe("section");
-			expect(sectionBlock.text?.type).toBe("mrkdwn");
-			expect(sectionBlock.text?.text).toContain(
-				"🔧 *Tool execution approval requested*",
-			);
-			expect(sectionBlock.text?.text).toContain("*Tool:* Bash");
-			expect(sectionBlock.text?.text).toContain("*Parameters:*");
-			expect(sectionBlock.text?.text).toContain(
-				JSON.stringify(parameters, null, 2),
-			);
-
-			// Check actions block
-			const actionsBlock = result.blocks[1];
-			expect(actionsBlock.type).toBe("actions");
-			expect(actionsBlock.elements).toHaveLength(2);
-
-			// Check approve button
-			const approveButton = actionsBlock.elements?.[0];
-			expect(approveButton?.type).toBe("button");
-			expect(approveButton?.text?.type).toBe("plain_text");
-			expect(approveButton?.text?.text).toBe("✅ Approve");
-			expect(approveButton?.style).toBe("primary");
-			expect(approveButton?.action_id).toBe("approve");
-			expect(approveButton?.value).toBe(approvalId);
-
-			// Check reject button
-			const rejectButton = actionsBlock.elements?.[1];
-			expect(rejectButton?.type).toBe("button");
-			expect(rejectButton?.text?.type).toBe("plain_text");
-			expect(rejectButton?.text?.text).toBe("❌ Reject");
-			expect(rejectButton?.style).toBe("danger");
-			expect(rejectButton?.action_id).toBe("reject");
-			expect(rejectButton?.value).toBe(approvalId);
+			expect(result).toEqual({
+				type: "section",
+				text: {
+					type: "mrkdwn",
+					text: "Test message *with markdown*",
+				},
+			});
 		});
 	});
 
-	describe("createApprovedMessage", () => {
-		it("should create approved message with correct structure", () => {
-			const approval: ApprovalRequest = {
-				id: "test-id",
-				toolName: "Write",
-				parameters: { file_path: "/test.txt", content: "test" },
-				status: "pending",
-			};
-			const userId = "U12345";
+	describe("button", () => {
+		it("should create approve button with correct properties", () => {
+			const result = button({
+				value: "approval-123",
+				actionId: "approve",
+			});
 
-			const result = createApprovedMessage(approval, userId);
-
-			expect(result.text).toBe("✅ Tool execution approved by <@U12345>");
-			expect(result.blocks).toHaveLength(1);
-
-			const block = result.blocks[0];
-			expect(block.type).toBe("section");
-			expect(block.text.type).toBe("mrkdwn");
-			expect(block.text.text).toContain("✅ *Tool execution approved*");
-			expect(block.text.text).toContain("*Tool:* Write");
-			expect(block.text.text).toContain("*Decided by:* <@U12345>");
-			expect(block.text.text).toContain(
-				JSON.stringify(approval.parameters, null, 2),
-			);
+			expect(result).toEqual({
+				type: "button",
+				text: {
+					type: "plain_text",
+					text: "✅ Approve",
+				},
+				style: "primary",
+				action_id: "approve",
+				value: "approval-123",
+			});
 		});
 
-		it("should create approved message with complete content", () => {
-			const approval: ApprovalRequest = {
-				id: "test-id",
+		it("should create reject button with correct properties", () => {
+			const result = button({
+				value: "approval-456",
+				actionId: "reject",
+			});
+
+			expect(result).toEqual({
+				type: "button",
+				text: {
+					type: "plain_text",
+					text: "❌ Reject",
+				},
+				style: "danger",
+				action_id: "reject",
+				value: "approval-456",
+			});
+		});
+	});
+
+	describe("message", () => {
+		it("should create requested message with correct format", () => {
+			const result = message({
+				type: "requested",
 				toolName: "Bash",
-				parameters: { command: "npm install" },
-				status: "pending",
-			};
-			const userId = "U67890";
+				parameters: { command: "ls -la" },
+			});
 
-			const result = createApprovedMessage(approval, userId);
-
-			expect(result.blocks[0].text.text).toMatch(
-				/✅ \*Tool execution approved\*/,
-			);
-			expect(result.blocks[0].text.text).toMatch(/\*Tool:\* Bash/);
-			expect(result.blocks[0].text.text).toMatch(
-				/\*Arguments:\* \{[\s\S]*"command": "npm install"[\s\S]*\}/,
-			);
-			expect(result.blocks[0].text.text).toMatch(/\*Decided by:\* <@U67890>/);
-			expect(result.blocks[0].text.text).toMatch(
-				/\*Time:\* \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/,
-			);
+			expect(result).toContain("🔧 *Tool execution approval requested*");
+			expect(result).toContain("*Tool:* Bash");
+			expect(result).toContain("*Parameters:*");
+			expect(result).toContain("```");
+			expect(result).toContain('"command": "ls -la"');
 		});
-	});
 
-	describe("createRejectedMessage", () => {
-		it("should create rejected message with correct structure", () => {
-			const approval: ApprovalRequest = {
-				id: "test-id",
+		it("should create approved message with user and timestamp", () => {
+			const beforeTime = new Date().toISOString();
+			const result = message({
+				type: "approved",
+				toolName: "Write",
+				parameters: { file: "test.txt" },
+				userId: "U12345",
+			});
+			const afterTime = new Date().toISOString();
+
+			expect(result).toContain("✅ *Tool execution approved*");
+			expect(result).toContain("*Tool:* Write");
+			expect(result).toContain("*Arguments:*");
+			expect(result).toContain('"file": "test.txt"');
+			expect(result).toContain("*Decided by:* <@U12345>");
+			expect(result).toContain("*Time:*");
+
+			// Check that timestamp is between before and after
+			const timeMatch = result.match(/\*Time:\* (.+)$/m);
+			expect(timeMatch).toBeTruthy();
+			if (timeMatch) {
+				const timestamp = timeMatch[1];
+				expect(timestamp >= beforeTime).toBe(true);
+				expect(timestamp <= afterTime).toBe(true);
+			}
+		});
+
+		it("should create rejected message with user and timestamp", () => {
+			const result = message({
+				type: "rejected",
 				toolName: "Edit",
-				parameters: { file_path: "/test.txt" },
-				status: "pending",
-			};
-			const userId = "U67890";
+				parameters: { file: "config.json" },
+				userId: "U67890",
+			});
 
-			const result = createRejectedMessage(approval, userId);
-
-			expect(result.text).toBe("❌ Tool execution rejected by <@U67890>");
-			expect(result.blocks).toHaveLength(1);
-
-			const block = result.blocks[0];
-			expect(block.type).toBe("section");
-			expect(block.text.type).toBe("mrkdwn");
-			expect(block.text.text).toContain("❌ *Tool execution rejected*");
-			expect(block.text.text).toContain("*Tool:* Edit");
-			expect(block.text.text).toContain("*Decided by:* <@U67890>");
+			expect(result).toContain("❌ *Tool execution rejected*");
+			expect(result).toContain("*Tool:* Edit");
+			expect(result).toContain("*Arguments:*");
+			expect(result).toContain('"file": "config.json"');
+			expect(result).toContain("*Decided by:* <@U67890>");
+			expect(result).toContain("*Time:*");
+			expect(result).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
 		});
 
-		it("should create rejected message with complete content", () => {
-			const approval: ApprovalRequest = {
-				id: "test-id",
-				toolName: "MultiEdit",
-				parameters: { edits: [{ old: "foo", new: "bar" }] },
-				status: "pending",
+		it("should format complex parameters correctly", () => {
+			const complexParams = {
+				command: "npm install",
+				args: ["--save-dev", "typescript"],
+				env: { NODE_ENV: "development" },
 			};
-			const userId = "U12345";
 
-			const result = createRejectedMessage(approval, userId);
+			const result = message({
+				type: "requested",
+				toolName: "Bash",
+				parameters: complexParams,
+			});
 
-			expect(result.blocks[0].text.text).toMatch(
-				/❌ \*Tool execution rejected\*/,
-			);
-			expect(result.blocks[0].text.text).toMatch(/\*Tool:\* MultiEdit/);
-			expect(result.blocks[0].text.text).toMatch(/\*Decided by:\* <@U12345>/);
-			expect(result.blocks[0].text.text).toMatch(
-				/\*Time:\* \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/,
-			);
+			expect(result).toContain("```");
+			expect(result).toContain(JSON.stringify(complexParams, null, 2));
 		});
 	});
 });

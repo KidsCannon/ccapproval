@@ -220,6 +220,7 @@ async function handlePermissionPrompt(channel: string, args: unknown) {
 			type: "requested",
 			toolName: args.tool_name,
 			parameters: args.input,
+			cwd: process.cwd(),
 		});
 		const slackMessage = {
 			text: text.split("\n")[0],

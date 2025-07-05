@@ -36,11 +36,13 @@ export const plainText = (
 				type: "requested";
 				toolName: string;
 				parameters: unknown;
+				cwd?: string;
 		  }
 		| {
 				type: "approved" | "rejected";
 				toolName: string;
 				parameters: unknown;
+				cwd?: string;
 				userId: string;
 		  },
 ) => {

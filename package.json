@@ -19,7 +19,8 @@
 	"license": "MIT",
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.13.3",
-		"@slack/bolt": "^4.4.0"
+		"@slack/bolt": "^4.4.0",
+		"zod": "^3.25.74"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.0.6",

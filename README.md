@@ -8,18 +8,33 @@ $ claude --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
 
 ## INSTALLATION
 
-CLI:
+## Option1. Register MCP Tool
 
+setup:
 ```shell
+# npx
 $ claude mcp add ccapproval -s user \
 	-e "SLACK_BOT_TOKEN=xoxb-..." \
 	-e "SLACK_APP_TOKEN=xapp-..." \
 	-e "SLACK_CHANNEL_NAME=your-channel-name" \
-	-- deno -A ccapproval
+	-- npx ccapproval@latest
+
+# Deno
+$ claude mcp add ccapproval -s user \
+	-e "SLACK_BOT_TOKEN=xoxb-..." \
+	-e "SLACK_APP_TOKEN=xapp-..." \
+	-e "SLACK_CHANNEL_NAME=your-channel-name" \
+	-- deno --allow-sys --allow-env --allow-net=slack.com,wss-primary.slack.com npm:ccapproval@latest
 ```
 
-JSON:
+usage:
+```shell
+$ claude --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
+```
 
+## Option2. Specify MCP Config
+
+~/.local/config/approval/mcp.json:
 ```json
 {
   "mcpServers": {
@@ -34,6 +49,11 @@ JSON:
     }
   }
 }
+```
+
+usage:
+```
+$ claude --mcp-config ~/.local/config/approval/mcp.json --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
 ```
 
 ## NOTICE

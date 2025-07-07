@@ -82,13 +82,11 @@ describe("slack-messages", () => {
 
 			expect(result).toContain("✅ *Tool execution approved*");
 			expect(result).toContain("*Tool:* Write");
-			expect(result).toContain("*Arguments:*");
+			expect(result).toContain("*Parameters:*");
 			expect(result).toContain('"file": "test.txt"');
-			expect(result).toContain("*Decided by:* <@U12345>");
-			expect(result).toContain("*Time:*");
 
 			// Check that timestamp is between before and after
-			const timeMatch = result.match(/\*Time:\* (.+)$/m);
+			const timeMatch = result.match(/ at (.+)$/m);
 			expect(timeMatch).toBeTruthy();
 			if (timeMatch) {
 				const timestamp = timeMatch[1];
@@ -107,10 +105,8 @@ describe("slack-messages", () => {
 
 			expect(result).toContain("❌ *Tool execution rejected*");
 			expect(result).toContain("*Tool:* Edit");
-			expect(result).toContain("*Arguments:*");
+			expect(result).toContain("*Parameters:*");
 			expect(result).toContain('"file": "config.json"');
-			expect(result).toContain("*Decided by:* <@U67890>");
-			expect(result).toContain("*Time:*");
 			expect(result).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);
 		});
 

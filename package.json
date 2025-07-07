@@ -26,6 +26,11 @@
 	],
 	"author": "Takatoshi Matsumoto",
 	"license": "MIT",
+	"homepage": "https://github.com/KidsCannon/ccapproval",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/KidsCannon/ccapproval"
+	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.13.3",
 		"@slack/bolt": "^4.4.0",

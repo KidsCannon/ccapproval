@@ -1,4 +1,5 @@
-const codeBlock = (text: string) => `\`\`\`${text}\`\`\``;
+const codeBlock = (text: string, options?: { oneline?: boolean }) =>
+	options?.oneline ? `\`${text}\`` : `\`\`\`${text}\`\`\``;
 
 export const markdownSection = (text: string) => {
 	return {
@@ -63,8 +64,8 @@ export const plainText = (
 
 	const res = `${header}
 
-*Tool:* ${args.toolName}
-*Working Directory:* ${codeBlock(args.cwd)}
+*Tool:* ${codeBlock(args.toolName, { oneline: true })}
+*Directory:* ${codeBlock(args.cwd, { oneline: true })}
 *Parameters:* ${codeBlock(params.length > 500 ? `${params.slice(0, 500)}...` : params)}`;
 
 	return res;

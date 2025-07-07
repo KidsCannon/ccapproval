@@ -50,6 +50,38 @@ alias claude-p='claudee --permission-mode acceptEdits --mcp-config ~/.config/cca
 | Auth errors | Check token format and whitespace |
 | Channel not found | Remove `#` from channel name |
 
+### DEBUGGING
+
+```shell
+$ claude --debug --mcp-config ~/.config/ccapproval/mcp-debug.json --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
+```
+
+~/.config/ccapproval/mcp-debug.json:
+```json
+{
+	"mcpServers": {
+		"ccapproval": {
+			"command": "bash",
+			"args": [
+				"-c",
+				"npx ccapproval@latest 2> >(systemd-cat -p err -t ccapproval)"
+			],
+			"env": {
+				"CCAPPROVAL_DEBUG": "true",
+				"SLACK_BOT_TOKEN": "xoxb-****",
+				"SLACK_APP_TOKEN": "xapp-****",
+				"SLACK_CHANNEL_NAME": "your-channel-name"
+			}
+		}
+	}
+}
+```
+
+See debug logs:
+```shell
+$ journalctl -u ccapproval.service -f
+```
+
 ## SLACK SETUP
 
 1. Create App: https://api.slack.com/apps → New App → From scratch → Name: `ccapproval`

@@ -44,10 +44,12 @@ alias claude-p='claudee --permission-mode acceptEdits --mcp-config ~/.config/cca
 
 ## TROUBLESHOOTING
 
+### FAQ
+
 | Issue | Solution |
 |-------|----------|
-| Bot not posting | Verify bot is in channel |
 | Auth errors | Check token format and whitespace |
+| Reactions not working | Verify bot is in channel |
 | Channel not found | Remove `#` from channel name |
 
 ### DEBUGGING

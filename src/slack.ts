@@ -54,8 +54,14 @@ export async function startSlackApp() {
 	});
 
 	await slackApp.start();
-
 	await p;
 
 	return slackApp;
+}
+
+export async function isChannelMember(slackApp: bolt.App, channel: string) {
+	const info = await slackApp.client.conversations.info({ channel });
+	if (info.channel == null) return false;
+	debug("isChannelMember", info.channel);
+	return info.channel.is_member;
 }

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type bolt from "@slack/bolt";
+import { isChannelMember } from "./slack.ts";
 import { button, markdownSection, plainText } from "./slack-messages.ts";
 import type { ApprovalRequest } from "./types.ts";
 import { debug } from "./utils.ts";
@@ -213,6 +214,31 @@ export async function handlePermissionPrompt(
 		ts: postMessageResult.ts,
 		channel: postMessageResult.channel,
 	});
+
+	if (postMessageResult.channel != null && postMessageResult.ts != null) {
+		const isMember = await isChannelMember(slackApp, postMessageResult.channel);
+		if (!isMember) {
+			await slackApp.client.chat.delete({
+				channel: postMessageResult.channel,
+				ts: postMessageResult.ts,
+			});
+			await slackApp.client.chat.postMessage({
+				channel,
+				text: "Please invite @ccapproval to this channel",
+			});
+			return {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({
+							behavior: "deny",
+							message: "SlackError: Please invite @ccapproval to this channel",
+						}),
+					},
+				],
+			};
+		}
+	}
 
 	// If this is the first message, save thread TS and add initial reaction
 	if (!processThreadTs && postMessageResult.ts && postMessageResult.channel) {

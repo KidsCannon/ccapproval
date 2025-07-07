@@ -61,6 +61,7 @@ describe("slack-messages", () => {
 				type: "requested",
 				toolName: "Bash",
 				parameters: { command: "ls -la" },
+				cwd: "/tmp",
 			});
 
 			expect(result).toContain("🔧 *Tool execution approval requested*");
@@ -77,6 +78,7 @@ describe("slack-messages", () => {
 				toolName: "Write",
 				parameters: { file: "test.txt" },
 				userId: "U12345",
+				cwd: "/tmp",
 			});
 			const afterTime = new Date().toISOString();
 
@@ -101,6 +103,7 @@ describe("slack-messages", () => {
 				toolName: "Edit",
 				parameters: { file: "config.json" },
 				userId: "U67890",
+				cwd: "/tmp",
 			});
 
 			expect(result).toContain("❌ *Tool execution rejected*");
@@ -121,6 +124,7 @@ describe("slack-messages", () => {
 				type: "requested",
 				toolName: "Bash",
 				parameters: complexParams,
+				cwd: "/tmp",
 			});
 
 			expect(result).toContain("```");

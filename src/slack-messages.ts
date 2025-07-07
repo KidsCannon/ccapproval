@@ -59,11 +59,13 @@ export const plainText = (
 			break;
 	}
 
+	const params = JSON.stringify(args.parameters, null, 2);
+
 	const res = `${header}
 
-*Working Directory:* ${args.cwd}
 *Tool:* ${args.toolName}
-*Parameters:* ${codeBlock(JSON.stringify(args.parameters, null, 2))}`;
+*Working Directory:* ${codeBlock(args.cwd)}
+*Parameters:* ${codeBlock(params.length > 500 ? `${params.slice(0, 500)}...` : params)}`;
 
 	return res;
 };

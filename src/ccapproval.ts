@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type bolt from "@slack/bolt";
 import { NAME, WAIT_FOR_DECISION_TIMEOUT } from "./constants.ts";
+import { env } from "./env.ts";
 import { isChannelMember } from "./slack.ts";
 import { button, markdownSection, plainText } from "./slack-messages.ts";
 import { debug, formatCwd, info, warn } from "./utils.ts";
@@ -191,6 +192,7 @@ export async function handlePermissionPrompt(
 		toolName: args.tool_name,
 		parameters: args.input,
 		cwd: formatCwd(),
+		userId: env.SLACK_MENTION,
 	});
 	const slackMessage = {
 		text: text.split("\n")[0],

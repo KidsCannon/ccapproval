@@ -5,12 +5,12 @@
 Add MCP server:
 
 ```shell
-# npx
 $ claude mcp add ccapproval --scope user \
-	-e "SLACK_BOT_TOKEN=xoxb-..." \
-	-e "SLACK_APP_TOKEN=xapp-..." \
-	-e "SLACK_CHANNEL_NAME=your-channel-name" \
-	-- npx ccapproval@latest
+  	-e "SLACK_BOT_TOKEN=xoxb-..." \
+  	-e "SLACK_APP_TOKEN=xapp-..." \
+	  -e "SLACK_CHANNEL=channel for communication" \
+	  -e "SLACK_MENTION=username for mention (optional)" \
+  	-- npx ccapproval@latest
 ```
 
 Or use MCP config file:

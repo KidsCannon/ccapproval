@@ -59,7 +59,7 @@ export class McpServer {
 		}
 
 		const { ts, channel } = await this.slackApp.client.chat.postMessage({
-			channel: env.SLACK_CHANNEL_NAME,
+			channel: env.SLACK_CHANNEL,
 			text: `${NAME} is started`,
 		});
 

@@ -1,5 +1,6 @@
 export const env = {
-	SLACK_CHANNEL_NAME: requireEnv("SLACK_CHANNEL_NAME"),
+	SLACK_CHANNEL: requireEnv("SLACK_CHANNEL"),
+	SLACK_MENTION: process.env.SLACK_MENTION,
 	SLACK_BOT_TOKEN: requireEnv("SLACK_BOT_TOKEN"),
 	SLACK_APP_TOKEN: requireEnv("SLACK_APP_TOKEN"),
 	CCAPPROVAL_DEBUG: process.env.CCAPPROVAL_DEBUG != null,

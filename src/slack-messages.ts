@@ -38,6 +38,7 @@ export const plainText = (
 				toolName: string;
 				parameters: unknown;
 				cwd: string;
+				userId?: string;
 		  }
 		| {
 				type: "approved" | "rejected";
@@ -50,7 +51,9 @@ export const plainText = (
 	let header: string;
 	switch (args.type) {
 		case "requested":
-			header = `🔧 *Tool execution approval requested*`;
+			header = `🔧 *Tool execution approval requested*${
+				args.userId ? ` to <@${args.userId}>` : ""
+			}`;
 			break;
 		case "approved":
 			header = `✅ *Tool execution approved* by <@${args.userId}> at ${new Date().toISOString()}`;

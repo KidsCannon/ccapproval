@@ -24,6 +24,7 @@ See examples:
 - [examples/mcp-npx.json](examples/mcp-npx.json)
 - [examples/mcp-npx-debug.json](examples/mcp-npx-debug.json)
 - [examples/mcp-deno.json](examples/mcp-deno.json)
+- [examples/mcp-deno-debug.json](examples/mcp-deno-debug.json)
 
 ## USAGE
 

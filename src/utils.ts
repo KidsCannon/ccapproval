@@ -1,4 +1,4 @@
-import { env } from "./env";
+import { env } from "./env.ts";
 
 export function debug(...args: unknown[]) {
 	if (!env.CCAPPROVAL_DEBUG) return;

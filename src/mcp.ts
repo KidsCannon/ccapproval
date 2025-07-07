@@ -12,7 +12,7 @@ import z from "zod";
 import { handlePermissionPrompt } from "./ccapproval.ts";
 import { env } from "./env.ts";
 import { startSlackApp } from "./slack.ts";
-import { debug, error } from "./utils.ts";
+import { debug, error, getVersion } from "./utils.ts";
 
 const NAME = "ccapproval";
 
@@ -25,7 +25,7 @@ export async function mcp() {
 	const server = new Server(
 		{
 			name: NAME,
-			version: "1.0.0",
+			version: getVersion(),
 		},
 		{
 			capabilities: {

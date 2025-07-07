@@ -1,0 +1,17 @@
+{
+	"mcpServers": {
+		"ccapproval": {
+			"command": "bash",
+			"args": [
+				"-c",
+				"npx ccapproval@latest 2> >(systemd-cat -p err -t ccapproval)"
+			],
+			"env": {
+				"CCAPPROVAL_DEBUG": "true",
+				"SLACK_BOT_TOKEN": "xoxb-****",
+				"SLACK_APP_TOKEN": "xapp-****",
+				"SLACK_CHANNEL_NAME": "your-channel-name"
+			}
+		}
+	}
+}

@@ -1,0 +1,13 @@
+{
+	"mcpServers": {
+		"ccapproval": {
+			"command": "npx",
+			"args": ["ccapproval@latest"],
+			"env": {
+				"SLACK_BOT_TOKEN": "xoxb-****",
+				"SLACK_APP_TOKEN": "xapp-****",
+				"SLACK_CHANNEL_NAME": "your-channel-name"
+			}
+		}
+	}
+}

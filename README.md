@@ -1,64 +1,34 @@
 # ccapproval - Claude Code Approval
 
-## USAGE
-
-```shell
-$ claude --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
-```
-
 ## INSTALLATION
 
-## Option1. Register MCP Tool
+Add MCP server:
 
-setup:
 ```shell
 # npx
-$ claude mcp add ccapproval -s user \
+$ claude mcp add ccapproval --scope user \
 	-e "SLACK_BOT_TOKEN=xoxb-..." \
 	-e "SLACK_APP_TOKEN=xapp-..." \
 	-e "SLACK_CHANNEL_NAME=your-channel-name" \
 	-- npx ccapproval@latest
-
-# Deno
-$ claude mcp add ccapproval -s user \
-	-e "SLACK_BOT_TOKEN=xoxb-..." \
-	-e "SLACK_APP_TOKEN=xapp-..." \
-	-e "SLACK_CHANNEL_NAME=your-channel-name" \
-	-- deno --allow-sys --allow-env --allow-net=slack.com,wss-primary.slack.com npm:ccapproval@latest
 ```
 
-usage:
+Or use MCP config file:
+
+```shell
+$ claude --mcp-config ~/.config/ccapproval/mcp.json ...
+```
+
+See examples:
+
+- [examples/mcp-npx.json](examples/mcp-npx.json)
+- [examples/mcp-npx-debug.json](examples/mcp-npx-debug.json)
+- [examples/mcp-deno.json](examples/mcp-deno.json)
+
+## USAGE
+
 ```shell
 $ claude --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
-```
-
-## Option2. Specify MCP Config
-
-~/.config/ccapproval/mcp.json:
-```json
-{
-  "mcpServers": {
-    "ccapproval": {
-      "command": "deno",
-      "args": [
-        "--allow-sys",
-        "--allow-env",
-        "--allow-net=slack.com,wss-primary.slack.com",
-        "npm:ccapproval@latest"
-      ],
-      "env": {
-        "SLACK_BOT_TOKEN": "xoxb-...",
-        "SLACK_APP_TOKEN": "xapp-...",
-        "SLACK_CHANNEL_NAME": "your-channel-name"
-      }
-    }
-  }
-}
-```
-
-usage:
-```
-$ claude --mcp-config ~/.config/ccapproval/mcp.json --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
 ```
 
 ## NOTICE
@@ -69,7 +39,7 @@ $ claude --mcp-config ~/.config/ccapproval/mcp.json --permission-prompt-tool mcp
 ## TIPS
 
 ```shell
-alias claude-p='claude --permission-prompt-tool mcp__ccapproval__tool-approval -p'
+alias claude-p='claudee --permission-mode acceptEdits --mcp-config ~/.config/ccapproval/mcp.json --permission-prompt-tool mcp__ccapproval__tool-approval -p'
 ```
 
 ## TROUBLESHOOTING

@@ -1,0 +1,18 @@
+{
+	"mcpServers": {
+		"ccapproval": {
+			"command": "deno",
+			"args": [
+				"--allow-sys",
+				"--allow-env",
+				"--allow-net=slack.com,wss-primary.slack.com",
+				"npm:ccapproval@latest"
+			],
+			"env": {
+				"SLACK_BOT_TOKEN": "xoxb-****",
+				"SLACK_APP_TOKEN": "xapp-****",
+				"SLACK_CHANNEL_NAME": "your-channel-name"
+			}
+		}
+	}
+}

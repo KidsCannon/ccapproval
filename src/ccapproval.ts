@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type bolt from "@slack/bolt";
 import { isChannelMember } from "./slack.ts";
 import { button, markdownSection, plainText } from "./slack-messages.ts";
-import { debug, info, warn } from "./utils.ts";
+import { debug, info, warn, formatCwd } from "./utils.ts";
 
 export interface ApprovalRequest {
 	id: string;
@@ -86,7 +86,7 @@ export async function handlePermissionPrompt(
 				type: "approved",
 				...approval,
 				userId: body.user.id,
-				cwd: process.cwd(),
+				cwd: formatCwd(),
 			});
 			const massage = {
 				text: text.split("\n")[0],
@@ -144,7 +144,7 @@ export async function handlePermissionPrompt(
 				type: "rejected",
 				...approval,
 				userId: body.user.id,
-				cwd: process.cwd(),
+				cwd: formatCwd(),
 			});
 			const massage = {
 				text: text.split("\n")[0],
@@ -195,7 +195,7 @@ export async function handlePermissionPrompt(
 		type: "requested",
 		toolName: args.tool_name,
 		parameters: args.input,
-		cwd: process.cwd(),
+		cwd: formatCwd(),
 	});
 	const slackMessage = {
 		text: text.split("\n")[0],

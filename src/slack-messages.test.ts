@@ -65,7 +65,7 @@ describe("slack-messages", () => {
 			});
 
 			expect(result).toContain("🔧 *Tool execution approval requested*");
-			expect(result).toContain("*Tool:* Bash");
+			expect(result).toContain("*Tool:* `Bash`");
 			expect(result).toContain("*Parameters:*");
 			expect(result).toContain("```");
 			expect(result).toContain('"command": "ls -la"');
@@ -83,7 +83,7 @@ describe("slack-messages", () => {
 			const afterTime = new Date().toISOString();
 
 			expect(result).toContain("✅ *Tool execution approved*");
-			expect(result).toContain("*Tool:* Write");
+			expect(result).toContain("*Tool:* `Write`");
 			expect(result).toContain("*Parameters:*");
 			expect(result).toContain('"file": "test.txt"');
 
@@ -107,7 +107,7 @@ describe("slack-messages", () => {
 			});
 
 			expect(result).toContain("❌ *Tool execution rejected*");
-			expect(result).toContain("*Tool:* Edit");
+			expect(result).toContain("*Tool:* `Edit`");
 			expect(result).toContain("*Parameters:*");
 			expect(result).toContain('"file": "config.json"');
 			expect(result).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/);

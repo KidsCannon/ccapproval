@@ -71,7 +71,8 @@ $ claude --debug --mcp-config ~/.config/ccapproval/mcp-debug.json --permission-p
 				"CCAPPROVAL_DEBUG": "true",
 				"SLACK_BOT_TOKEN": "xoxb-****",
 				"SLACK_APP_TOKEN": "xapp-****",
-				"SLACK_CHANNEL_NAME": "your-channel-name"
+				"SLACK_CHANNEL": "channel for communication",
+				"SLACK_MENTION": "username for mention (optional)"
 			}
 		}
 	}

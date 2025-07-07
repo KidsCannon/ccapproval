@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type bolt from "@slack/bolt";
 import { isChannelMember } from "./slack.ts";
 import { button, markdownSection, plainText } from "./slack-messages.ts";
-import { debug } from "./utils.ts";
+import { debug, info, warn } from "./utils.ts";
 
 export interface ApprovalRequest {
 	id: string;
@@ -12,6 +12,7 @@ export interface ApprovalRequest {
 	decidedBy?: string;
 	decidedAt?: Date;
 	reason?: string;
+	createdAt: Date;
 }
 
 // const DANGEROUS_TOOLS = ["Bash", "Write", "Edit", "MultiEdit"];
@@ -38,14 +39,21 @@ export async function handlePermissionPrompt(
 	},
 ) {
 	const { channel, waitTimeout } = options;
-	debug("handlePermissionPrompt", channel, args);
+	const requestId = randomUUID();
+	const startTime = Date.now();
+
+	info("Approval request received", {
+		action: "approval_request_received",
+		requestId,
+		tool: args.tool_name,
+		channelId: channel,
+		timestamp: startTime,
+	});
 
 	// Handle approve button
 	slackApp.action<bolt.BlockAction>(
 		"approve",
 		async ({ body, ack, action, client }) => {
-			debug("on approve", body, action);
-
 			await ack();
 
 			if (!("value" in action) || !action.value) {
@@ -53,27 +61,27 @@ export async function handlePermissionPrompt(
 			}
 
 			const approval = approvals.get(action.value);
-			debug("finding approval", {
-				actionValue: action.value,
-				approval,
-				allApprovals: Array.from(approvals.entries()),
-			});
 			if (!approval || approval.status !== "pending") {
 				return;
 			}
-
-			debug("approving", approval);
 			approval.status = "approved";
 			approval.decidedBy = body.user.id;
 			approval.decidedAt = new Date();
 			approval.reason = "Approved via Slack";
+
+			info("Approval granted", {
+				action: "approval_granted",
+				requestId: approval.id,
+				approverId: body.user.id,
+				responseTime:
+					approval.decidedAt.getTime() - approval.createdAt.getTime(),
+			});
 
 			// Update Slack message
 			if (!body.message?.ts) {
 				return;
 			}
 
-			debug("updating slack message", approval);
 			const text = plainText({
 				type: "approved",
 				...approval,
@@ -84,7 +92,6 @@ export async function handlePermissionPrompt(
 				text: text.split("\n")[0],
 				blocks: [markdownSection(text)],
 			};
-			debug("updating slack message", massage);
 			await client.chat.update({
 				channel: body.channel?.id ?? channel,
 				ts: body.message.ts,
@@ -94,7 +101,6 @@ export async function handlePermissionPrompt(
 			// Notify waiting promise
 			const resolver = pendingResolvers.get(action.value);
 			if (resolver) {
-				debug("resolving", approval);
 				resolver.resolve(approval);
 				pendingResolvers.delete(action.value);
 			}
@@ -105,7 +111,6 @@ export async function handlePermissionPrompt(
 	slackApp.action<bolt.BlockAction>(
 		"reject",
 		async ({ body, ack, action, client }) => {
-			debug("on reject", body, action);
 			await ack();
 
 			if (!("value" in action) || !action.value) {
@@ -113,27 +118,28 @@ export async function handlePermissionPrompt(
 			}
 
 			const approval = approvals.get(action.value);
-			debug("finding approval", {
-				actionValue: action.value,
-				approval,
-				allApprovals: Array.from(approvals.entries()),
-			});
 			if (!approval || approval.status !== "pending") {
 				return;
 			}
-
-			debug("rejecting", approval);
 			approval.status = "rejected";
 			approval.decidedBy = body.user.id;
 			approval.decidedAt = new Date();
 			approval.reason = "Rejected via Slack";
+
+			info("Approval denied", {
+				action: "approval_denied",
+				requestId: approval.id,
+				approverId: body.user.id,
+				reason: approval.reason,
+				responseTime:
+					approval.decidedAt.getTime() - approval.createdAt.getTime(),
+			});
 
 			// Update Slack message
 			if (!body.message?.ts) {
 				return;
 			}
 
-			debug("updating slack message", approval);
 			const text = plainText({
 				type: "rejected",
 				...approval,
@@ -144,7 +150,6 @@ export async function handlePermissionPrompt(
 				text: text.split("\n")[0],
 				blocks: [markdownSection(text)],
 			};
-			debug("updating slack message", massage);
 			await client.chat.update({
 				channel: body.channel?.id ?? channel,
 				ts: body.message.ts,
@@ -154,15 +159,12 @@ export async function handlePermissionPrompt(
 			// Notify waiting promise
 			const resolver = pendingResolvers.get(action.value);
 			if (resolver) {
-				debug("resolving", approval);
 				resolver.resolve(approval);
 				pendingResolvers.delete(action.value);
 			}
 		},
 	);
 
-	// Check if tool is dangerous
-	debug("received tool", args.tool_name, args);
 	// if (!DANGEROUS_TOOLS.includes(args.tool_name)) {
 	// 	return {
 	// 		content: [
@@ -180,13 +182,13 @@ export async function handlePermissionPrompt(
 
 	// Create approval request
 	const approval: ApprovalRequest = {
-		id: randomUUID(),
+		id: requestId,
 		toolName: args.tool_name,
 		parameters: args.input,
 		status: "pending",
+		createdAt: new Date(startTime),
 	};
 	approvals.set(approval.id, approval);
-	debug("Created approval", { id: approval.id, toolName: approval.toolName });
 
 	// Send Slack notification
 	const text = plainText({
@@ -208,19 +210,11 @@ export async function handlePermissionPrompt(
 			},
 		],
 	};
-	debug("Sending Slack message", {
-		message: slackMessage,
-		useThread: !!processThreadTs,
-	});
 
 	const postMessageResult = await slackApp.client.chat.postMessage({
 		channel,
 		...slackMessage,
 		thread_ts: processThreadTs, // Use existing thread if available
-	});
-	debug("Posted message result:", {
-		ts: postMessageResult.ts,
-		channel: postMessageResult.channel,
 	});
 
 	if (postMessageResult.channel != null && postMessageResult.ts != null) {
@@ -262,9 +256,7 @@ export async function handlePermissionPrompt(
 		});
 	}
 
-	debug("Waiting for decision", approval.id);
 	const decision = await waitForDecision(approval.id, { waitTimeout });
-	debug("Decision:", decision);
 
 	// Update reactions on the thread root message
 	if (processThreadTs && processChannelId) {
@@ -308,7 +300,6 @@ export async function handlePermissionPrompt(
 			},
 		],
 	};
-	debug("Returning response", res);
 
 	return res;
 }
@@ -333,12 +324,17 @@ export async function waitForDecision(
 			approval.status = "timeout";
 			approval.reason = "Approval request timed out";
 
+			warn("Approval timeout", {
+				action: "approval_timeout",
+				requestId: id,
+				timeout: waitTimeout,
+			});
+
 			const resolver = pendingResolvers.get(id);
 			if (!resolver) {
 				return;
 			}
 
-			debug("Resolving approval", approval);
 			resolver.resolve(approval);
 			pendingResolvers.delete(id);
 		}, waitTimeout);

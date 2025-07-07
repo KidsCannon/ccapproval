@@ -12,7 +12,7 @@ import { handlePermissionPrompt } from "./ccapproval.ts";
 import { NAME, VERSION } from "./constants.ts";
 import { env } from "./env.ts";
 import { slackApp } from "./slack.ts";
-import { debug, error } from "./utils.ts";
+import { debug, error, info } from "./utils.ts";
 
 const inputSchema = z.object({
 	tool_name: z.string(),
@@ -43,9 +43,21 @@ export class McpServer {
 
 	async start() {
 		await this.slackApp.start();
+
+		// Get workspace info for logging
+		try {
+			const authTest = await this.slackApp.client.auth.test();
+			info("Slack client connected", {
+				workspace: authTest.team || "unknown",
+				botUser: authTest.user || "unknown",
+			});
+		} catch (err) {
+			error("Failed to get Slack workspace info", { error: err });
+		}
+
 		this.registerTools();
 		await this.server.connect(this.transport);
-		debug("🚀 MCP server connected and ready");
+		info("MCP server started", { transport: "stdio" });
 
 		// Handle various shutdown signals
 		process.on("SIGINT", this.shutdown);
@@ -79,8 +91,6 @@ export class McpServer {
 	private registerTools() {
 		// Handle tool calls
 		this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-			debug("CallToolRequestSchema", request);
-
 			if (this.isShuttingDown) {
 				throw new McpError(ErrorCode.InternalError, "Server is shutting down");
 			}
@@ -92,7 +102,6 @@ export class McpServer {
 						if (!arg.success) {
 							throw new McpError(ErrorCode.InvalidParams, "Invalid arguments");
 						}
-						debug("Calling handlePermissionPrompt", arg.data);
 						return await handlePermissionPrompt(this.slackApp, arg.data, {
 							channel: env.SLACK_CHANNEL_NAME,
 							waitTimeout: 12 * 60 * 60 * 1000, // 12 hours
@@ -105,7 +114,10 @@ export class McpServer {
 						);
 				}
 			} catch (err) {
-				error("Approval process failed", err);
+				error("MCP request failed", {
+					tool: request.params.name,
+					error: err instanceof Error ? err.message : "Unknown error",
+				});
 				throw new McpError(
 					ErrorCode.InternalError,
 					`Approval process failed: ${err instanceof Error ? err.message : "Unknown error"}`,
@@ -115,7 +127,6 @@ export class McpServer {
 
 		// List available tools
 		this.server.setRequestHandler(ListToolsRequestSchema, async () => {
-			debug("Listing tools");
 			return {
 				tools: [
 					{
@@ -140,5 +151,22 @@ export class McpServer {
 				],
 			};
 		});
+	}
+
+	async stop(): Promise<void> {
+		if (this.isShuttingDown) {
+			return;
+		}
+		this.isShuttingDown = true;
+
+		try {
+			// Stop accepting new connections
+			await this.transport.close();
+			// Stop Slack app
+			await this.slackApp.stop();
+		} catch (err) {
+			error("Error during server shutdown", { error: err });
+			throw err;
+		}
 	}
 }

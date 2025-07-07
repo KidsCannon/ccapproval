@@ -36,13 +36,13 @@ export const plainText = (
 				type: "requested";
 				toolName: string;
 				parameters: unknown;
-				cwd?: string;
+				cwd: string;
 		  }
 		| {
 				type: "approved" | "rejected";
 				toolName: string;
 				parameters: unknown;
-				cwd?: string;
+				cwd: string;
 				userId: string;
 		  },
 ) => {
@@ -61,8 +61,9 @@ export const plainText = (
 
 	const res = `${header}
 
+*Working Directory:* ${args.cwd}
 *Tool:* ${args.toolName}
-*Parameters:* ${codeBlock(JSON.stringify(args.parameters, null, 2))}${args.cwd ? `\n*Working Directory:* ${args.cwd}` : ""}`;
+*Parameters:* ${codeBlock(JSON.stringify(args.parameters, null, 2))}`;
 
 	return res;
 };

@@ -47,7 +47,7 @@ export class McpServer {
 	async start() {
 		await this.slackApp.start();
 
-		// Get workspace info for logging
+		// Verify Slack authentication
 		try {
 			const authTest = await this.slackApp.client.auth.test();
 			info("Slack client connected", {
@@ -55,7 +55,10 @@ export class McpServer {
 				botUser: authTest.user || "unknown",
 			});
 		} catch (err) {
-			error("Failed to get Slack workspace info", { error: err });
+			error("Failed to authenticate with Slack", { error: err });
+			throw new Error(
+				"Slack authentication failed. Please check your SLACK_BOT_TOKEN.",
+			);
 		}
 
 		const { ts, channel } = await this.slackApp.client.chat.postMessage({
@@ -86,7 +89,7 @@ export class McpServer {
 		});
 	}
 
-	private async shutdown() {
+	async shutdown() {
 		if (this.isShuttingDown) {
 			return;
 		}
@@ -181,22 +184,5 @@ export class McpServer {
 				],
 			};
 		});
-	}
-
-	async stop(): Promise<void> {
-		if (this.isShuttingDown) {
-			return;
-		}
-		this.isShuttingDown = true;
-
-		try {
-			// Stop accepting new connections
-			await this.transport.close();
-			// Stop Slack app
-			await this.slackApp.stop();
-		} catch (err) {
-			error("Error during server shutdown", { error: err });
-			throw err;
-		}
 	}
 }

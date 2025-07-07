@@ -17,7 +17,7 @@ async function main() {
 		process.on(signal, async () => {
 			info("Graceful shutdown initiated", { signal });
 			try {
-				await server.stop();
+				await server.shutdown();
 				info("Graceful shutdown completed");
 				process.exit(0);
 			} catch (err) {
@@ -27,8 +27,13 @@ async function main() {
 		});
 	}
 
-	await server.start();
-	info("Application ready to receive requests");
+	try {
+		await server.start();
+		info("Application ready to receive requests");
+	} catch (err) {
+		error("Server failed to start:", err);
+		await server.shutdown();
+	}
 }
 
 main().catch((err) => {

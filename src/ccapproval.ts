@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type bolt from "@slack/bolt";
 import { isChannelMember } from "./slack.ts";
 import { button, markdownSection, plainText } from "./slack-messages.ts";
-import { debug, info, warn, formatCwd } from "./utils.ts";
+import { debug, formatCwd, info, warn } from "./utils.ts";
 
 export interface ApprovalRequest {
 	id: string;
@@ -14,12 +14,6 @@ export interface ApprovalRequest {
 	reason?: string;
 	createdAt: Date;
 }
-
-// const DANGEROUS_TOOLS = ["Bash", "Write", "Edit", "MultiEdit"];
-
-// Track thread TS for this process (first message creates the thread)
-let processThreadTs: string | undefined;
-let processChannelId: string | undefined;
 
 const approvals = new Map<string, ApprovalRequest>();
 const pendingResolvers = new Map<
@@ -34,6 +28,8 @@ export async function handlePermissionPrompt(
 		input?: unknown;
 	},
 	options: {
+		toolCallCount: number;
+		rootThreadTs: string;
 		channel: string;
 		waitTimeout: number;
 	},
@@ -211,78 +207,69 @@ export async function handlePermissionPrompt(
 		],
 	};
 
-	const postMessageResult = await slackApp.client.chat.postMessage({
-		channel,
-		...slackMessage,
-		thread_ts: processThreadTs, // Use existing thread if available
-	});
-
-	if (postMessageResult.channel != null && postMessageResult.ts != null) {
-		const isMember = await isChannelMember(slackApp, postMessageResult.channel);
-		if (!isMember) {
-			await slackApp.client.chat.delete({
-				channel: postMessageResult.channel,
-				ts: postMessageResult.ts,
-			});
-			await slackApp.client.chat.postMessage({
-				channel,
-				text: "Please invite @ccapproval to this channel",
-			});
-			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify({
-							behavior: "deny",
-							message: "SlackError: Please invite @ccapproval to this channel",
-						}),
-					},
-				],
-			};
-		}
-	}
-
-	// If this is the first message, save thread TS and add initial reaction
-	if (!processThreadTs && postMessageResult.ts && postMessageResult.channel) {
-		debug("Creating new thread, saving thread TS");
-		processThreadTs = postMessageResult.ts;
-		processChannelId = postMessageResult.channel;
-
-		// Add executing reaction to the root message
-		await slackApp.client.reactions.add({
-			channel: postMessageResult.channel,
-			timestamp: postMessageResult.ts,
-			name: "hourglass_flowing_sand",
+	if (options.toolCallCount === 1) {
+		await slackApp.client.chat.update({
+			channel,
+			...slackMessage,
+			ts: options.rootThreadTs,
+		});
+	} else {
+		await slackApp.client.chat.postMessage({
+			channel,
+			...slackMessage,
+			thread_ts: options.rootThreadTs,
 		});
 	}
 
+	const isMember = await isChannelMember(slackApp, options.channel);
+	if (!isMember) {
+		await slackApp.client.chat.update({
+			channel,
+			ts: options.rootThreadTs,
+			text: "Please invite @ccapproval to this channel",
+		});
+		return {
+			content: [
+				{
+					type: "text",
+					text: JSON.stringify({
+						behavior: "deny",
+						message: "SlackError: Please invite @ccapproval to this channel",
+					}),
+				},
+			],
+		};
+	}
+
+	// If this is the first message, save thread TS and add initial reaction
+	await slackApp.client.reactions.add({
+		channel: options.channel,
+		timestamp: options.rootThreadTs,
+		name: "hourglass_flowing_sand",
+	});
+
 	const decision = await waitForDecision(approval.id, { waitTimeout });
 
-	// Update reactions on the thread root message
-	if (processThreadTs && processChannelId) {
-		// Remove executing reaction
-		try {
-			await slackApp.client.reactions.remove({
-				channel: processChannelId,
-				timestamp: processThreadTs,
-				name: "hourglass_flowing_sand",
-			});
-		} catch (error) {
-			debug("Failed to remove reaction:", error);
-		}
+	try {
+		await slackApp.client.reactions.remove({
+			channel: options.channel,
+			timestamp: options.rootThreadTs,
+			name: "hourglass_flowing_sand",
+		});
+	} catch (error) {
+		debug("Failed to remove reaction:", error);
+	}
 
-		// Add final status reaction
-		const reactionName =
-			decision.status === "approved" ? "white_check_mark" : "x";
-		try {
-			await slackApp.client.reactions.add({
-				channel: processChannelId,
-				timestamp: processThreadTs,
-				name: reactionName,
-			});
-		} catch (error) {
-			debug("Failed to add reaction:", error);
-		}
+	const reactionName =
+		decision.status === "approved" ? "white_check_mark" : "x";
+	try {
+		await slackApp.client.reactions.add({
+			channel: options.channel,
+			timestamp: options.rootThreadTs,
+			name: reactionName,
+		});
+	} catch (error) {
+		debug("Failed to add reaction:", error);
 	}
 
 	const res = {

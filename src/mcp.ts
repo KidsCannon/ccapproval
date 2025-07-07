@@ -55,7 +55,7 @@ export class McpServer {
 			error("Failed to get Slack workspace info", { error: err });
 		}
 
-		this.registerTools();
+		await this.registerTools();
 		await this.server.connect(this.transport);
 		info("MCP server started", { transport: "stdio" });
 
@@ -88,9 +88,22 @@ export class McpServer {
 		await this.server.close();
 	}
 
-	private registerTools() {
+	private async registerTools() {
+		let toolCallCount = 0;
+		const { ts: slackThreadTs, channel } =
+			await this.slackApp.client.chat.postMessage({
+				channel: env.SLACK_CHANNEL_NAME,
+				text: "Starting ccapproval",
+			});
+
 		// Handle tool calls
 		this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+			if (slackThreadTs == null || channel == null) {
+				throw new McpError(
+					ErrorCode.InternalError,
+					"Failed to post message to Slack",
+				);
+			}
 			if (this.isShuttingDown) {
 				throw new McpError(ErrorCode.InternalError, "Server is shutting down");
 			}
@@ -98,12 +111,15 @@ export class McpServer {
 			try {
 				switch (request.params.name) {
 					case "tool-approval": {
+						toolCallCount++;
 						const arg = inputSchema.safeParse(request.params.arguments);
 						if (!arg.success) {
 							throw new McpError(ErrorCode.InvalidParams, "Invalid arguments");
 						}
 						return await handlePermissionPrompt(this.slackApp, arg.data, {
-							channel: env.SLACK_CHANNEL_NAME,
+							toolCallCount,
+							rootThreadTs: slackThreadTs,
+							channel,
 							waitTimeout: 12 * 60 * 60 * 1000, // 12 hours
 						});
 					}

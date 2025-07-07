@@ -19,12 +19,7 @@ Or use MCP config file:
 $ claude --mcp-config ~/.config/ccapproval/mcp.json ...
 ```
 
-See examples:
-
-- [examples/mcp-npx.json](examples/mcp-npx.json)
-- [examples/mcp-npx-debug.json](examples/mcp-npx-debug.json)
-- [examples/mcp-deno.json](examples/mcp-deno.json)
-- [examples/mcp-deno-debug.json](examples/mcp-deno-debug.json)
+Example: [./examples/mcp-config/](examples/mcp-config)
 
 ## USAGE
 

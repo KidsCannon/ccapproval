@@ -7,10 +7,10 @@ const logLevel = env.CCAPPROVAL_DEBUG
 	: bolt.LogLevel.INFO;
 
 const logger = {
-	debug: (args: unknown[]) => debug("[@slack/bolt]", ...args),
-	info: (args: unknown[]) => info("[@slack/bolt]", ...args),
-	warn: (args: unknown[]) => warn("[@slack/bolt]", ...args),
-	error: (args: unknown[]) => error("[@slack/bolt]", ...args),
+	debug: (...args: unknown[]) => debug("[@slack/bolt]", ...args),
+	info: (...args: unknown[]) => info("[@slack/bolt]", ...args),
+	warn: (...args: unknown[]) => warn("[@slack/bolt]", ...args),
+	error: (...args: unknown[]) => error("[@slack/bolt]", ...args),
 	setLevel: () => {},
 	getLevel: () => logLevel,
 	setName: () => {},

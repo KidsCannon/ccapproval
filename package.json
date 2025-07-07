@@ -12,6 +12,7 @@
 		"node": ">=22.0.0"
 	},
 	"scripts": {
+		"build": "tsdown",
 		"check": "biome check .",
 		"test": "vitest --no-watch",
 		"typecheck": "tsc --noEmit"

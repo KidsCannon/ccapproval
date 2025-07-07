@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
-import { mcp } from "./mcp.ts";
+import { McpServer } from "./mcp.ts";
 import { error } from "./utils.ts";
 
 async function main() {
-	await mcp();
+	const server = new McpServer();
+	await server.start();
 }
 
 main().catch((err) => {

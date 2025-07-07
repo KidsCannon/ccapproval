@@ -161,9 +161,6 @@ export async function handlePermissionPrompt(
 		},
 	);
 
-	await slackApp.start();
-	debug("⚡️ Slack app is running");
-
 	// Check if tool is dangerous
 	debug("received tool", args.tool_name, args);
 	// if (!DANGEROUS_TOOLS.includes(args.tool_name)) {

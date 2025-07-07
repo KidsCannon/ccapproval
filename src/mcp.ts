@@ -10,11 +10,10 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import z from "zod";
 import { handlePermissionPrompt } from "./ccapproval.ts";
+import { NAME, VERSION } from "./constants.ts";
 import { env } from "./env.ts";
 import { startSlackApp } from "./slack.ts";
-import { debug, error, getVersion } from "./utils.ts";
-
-const NAME = "ccapproval";
+import { debug, error } from "./utils.ts";
 
 const inputSchema = z.object({
 	tool_name: z.string(),
@@ -25,7 +24,7 @@ export async function mcp() {
 	const server = new Server(
 		{
 			name: NAME,
-			version: getVersion(),
+			version: VERSION,
 		},
 		{
 			capabilities: {

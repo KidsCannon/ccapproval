@@ -15,7 +15,8 @@
 		"build": "tsdown",
 		"check": "biome check .",
 		"test": "vitest --no-watch",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"publish": "tsdown && pnpm publish"
 	},
 	"keywords": [
 		"claude-code",

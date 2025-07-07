@@ -87,4 +87,5 @@ alias claude-p='claude --permission-prompt-tool mcp__ccapproval__tool-approval -
 3. App Token: Basic Information → App-Level Tokens → Add `connections:write` scope → Save `xapp-...`
 4. Bot Token: OAuth & Permissions → Add scopes (`chat:write`, `chat:write.public`, `reactions:write`) → Install → Save `xoxb-...`
 5. Interactivity: Interactivity & Shortcuts → Enable
+6. `/invite @ccapproval` in the channel
 

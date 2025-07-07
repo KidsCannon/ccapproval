@@ -34,13 +34,18 @@ $ claude --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
 
 ## Option2. Specify MCP Config
 
-~/.local/config/approval/mcp.json:
+~/.config/ccapproval/mcp.json:
 ```json
 {
   "mcpServers": {
     "ccapproval": {
       "command": "deno",
-      "args": ["-A", "ccapproval"],
+      "args": [
+        "--allow-sys",
+        "--allow-env",
+        "--allow-net=slack.com,wss-primary.slack.com",
+        "npm:ccapproval@latest"
+      ],
       "env": {
         "SLACK_BOT_TOKEN": "xoxb-...",
         "SLACK_APP_TOKEN": "xapp-...",
@@ -53,7 +58,7 @@ $ claude --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
 
 usage:
 ```
-$ claude --mcp-config ~/.local/config/approval/mcp.json --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
+$ claude --mcp-config ~/.config/ccapproval/mcp.json --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
 ```
 
 ## NOTICE

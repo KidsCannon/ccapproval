@@ -1,6 +1,6 @@
 {
 	"name": "ccapproval",
-	"version": "1.0.0",
+	"version": "0.0.1",
 	"description": "Claude Code Slack approval system via MCP",
 	"type": "module",
 	"main": "dist/index.js",

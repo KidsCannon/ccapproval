@@ -3,22 +3,22 @@ import z from "zod";
 import { env } from "./env.ts";
 import { debug } from "./utils.ts";
 
-const slackWsMessageSchema = z.object({
+const wsMessageSchema = z.object({
 	type: z.string().optional(),
 	reason: z.string().optional(),
 });
 
-const slackLogLevel = env.CCAPPROVAL_DEBUG
+const logLevel = env.CCAPPROVAL_DEBUG
 	? bolt.LogLevel.DEBUG
 	: bolt.LogLevel.ERROR;
 
-const slackLogger = {
+const logger = {
 	debug,
 	info: debug,
 	warn: debug,
 	error: debug,
 	setLevel: () => {},
-	getLevel: () => slackLogLevel,
+	getLevel: () => logLevel,
 	setName: () => {},
 };
 
@@ -26,20 +26,20 @@ export async function startSlackApp() {
 	// https://tools.slack.dev/bolt-js/concepts/socket-mode/#custom-socketmode-receiver
 	const receiver = new bolt.SocketModeReceiver({
 		appToken: env.SLACK_APP_TOKEN,
-		logLevel: slackLogLevel,
-		logger: slackLogger,
+		logLevel,
+		logger,
 	});
 
 	const slackApp = new bolt.App({
 		token: env.SLACK_BOT_TOKEN,
-		logLevel: slackLogLevel,
-		logger: slackLogger,
+		logLevel,
+		logger,
 		receiver,
 	});
 
 	const p = new Promise<unknown>((resolve, reject) => {
 		receiver.client.on("ws_message", async (args) => {
-			const msg = slackWsMessageSchema.parse(JSON.parse(String(args)));
+			const msg = wsMessageSchema.parse(JSON.parse(String(args)));
 			switch (msg.type) {
 				case "hello":
 					resolve({});

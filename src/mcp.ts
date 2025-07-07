@@ -23,7 +23,10 @@ export class McpServer {
 	private slackApp: App;
 	private server: Server;
 	private transport: StdioServerTransport;
+	private calledToolCount = 0;
 	private isShuttingDown = false;
+	private slackThreadTs: string | undefined;
+	private slackChannel: string | undefined;
 
 	constructor() {
 		this.slackApp = slackApp();
@@ -55,6 +58,15 @@ export class McpServer {
 			error("Failed to get Slack workspace info", { error: err });
 		}
 
+		const { ts, channel } = await this.slackApp.client.chat.postMessage({
+			channel: env.SLACK_CHANNEL_NAME,
+			text: `${NAME} is started`,
+		});
+
+		// Store thread info for shutdown message
+		this.slackThreadTs = ts;
+		this.slackChannel = channel;
+
 		await this.registerTools();
 		await this.server.connect(this.transport);
 		info("MCP server started", { transport: "stdio" });
@@ -78,8 +90,20 @@ export class McpServer {
 		if (this.isShuttingDown) {
 			return;
 		}
-
 		this.isShuttingDown = true;
+
+		// Send shutdown message to Slack
+		if (this.slackThreadTs && this.slackChannel) {
+			try {
+				await this.slackApp.client.chat.postMessage({
+					channel: this.slackChannel,
+					thread_ts: this.slackThreadTs,
+					text: `${NAME} is finished`,
+				});
+			} catch (err) {
+				error("Failed to send shutdown message to Slack", { error: err });
+			}
+		}
 
 		debug("Stopping Slack app...");
 		await this.slackApp.stop();
@@ -89,16 +113,8 @@ export class McpServer {
 	}
 
 	private async registerTools() {
-		let toolCallCount = 0;
-		const { ts: slackThreadTs, channel } =
-			await this.slackApp.client.chat.postMessage({
-				channel: env.SLACK_CHANNEL_NAME,
-				text: `Starting ${NAME}`,
-			});
-
-		// Handle tool calls
 		this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-			if (slackThreadTs == null || channel == null) {
+			if (this.slackThreadTs == null || this.slackChannel == null) {
 				throw new McpError(
 					ErrorCode.InternalError,
 					"Failed to post message to Slack",
@@ -111,16 +127,15 @@ export class McpServer {
 			try {
 				switch (request.params.name) {
 					case "tool-approval": {
-						toolCallCount++;
+						this.calledToolCount++;
 						const arg = inputSchema.safeParse(request.params.arguments);
 						if (!arg.success) {
 							throw new McpError(ErrorCode.InvalidParams, "Invalid arguments");
 						}
 						return await handlePermissionPrompt(this.slackApp, arg.data, {
-							toolCallCount,
-							rootThreadTs: slackThreadTs,
-							channel,
-							waitTimeout: 12 * 60 * 60 * 1000, // 12 hours
+							toolCallCount: this.calledToolCount,
+							rootThreadTs: this.slackThreadTs,
+							channel: this.slackChannel,
 						});
 					}
 					default:
@@ -141,7 +156,6 @@ export class McpServer {
 			}
 		});
 
-		// List available tools
 		this.server.setRequestHandler(ListToolsRequestSchema, async () => {
 			return {
 				tools: [

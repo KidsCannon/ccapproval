@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type bolt from "@slack/bolt";
-import { NAME } from "./constants.ts";
+import { NAME, WAIT_FOR_DECISION_TIMEOUT } from "./constants.ts";
 import { isChannelMember } from "./slack.ts";
 import { button, markdownSection, plainText } from "./slack-messages.ts";
 import { debug, formatCwd, info, warn } from "./utils.ts";
@@ -32,10 +32,8 @@ export async function handlePermissionPrompt(
 		toolCallCount: number;
 		rootThreadTs: string;
 		channel: string;
-		waitTimeout: number;
 	},
 ) {
-	const { channel, waitTimeout } = options;
 	const requestId = randomUUID();
 	const startTime = Date.now();
 
@@ -43,7 +41,7 @@ export async function handlePermissionPrompt(
 		action: "approval_request_received",
 		requestId,
 		tool: args.tool_name,
-		channelId: channel,
+		channelId: options.channel,
 		timestamp: startTime,
 	});
 
@@ -90,7 +88,7 @@ export async function handlePermissionPrompt(
 				blocks: [markdownSection(text)],
 			};
 			await client.chat.update({
-				channel: body.channel?.id ?? channel,
+				channel: body.channel?.id ?? options.channel,
 				ts: body.message.ts,
 				...massage,
 			});
@@ -148,7 +146,7 @@ export async function handlePermissionPrompt(
 				blocks: [markdownSection(text)],
 			};
 			await client.chat.update({
-				channel: body.channel?.id ?? channel,
+				channel: body.channel?.id ?? options.channel,
 				ts: body.message.ts,
 				...massage,
 			});
@@ -210,13 +208,13 @@ export async function handlePermissionPrompt(
 
 	if (options.toolCallCount === 1) {
 		await slackApp.client.chat.update({
-			channel,
+			channel: options.channel,
 			...slackMessage,
 			ts: options.rootThreadTs,
 		});
 	} else {
 		await slackApp.client.chat.postMessage({
-			channel,
+			channel: options.channel,
 			...slackMessage,
 			thread_ts: options.rootThreadTs,
 		});
@@ -225,7 +223,7 @@ export async function handlePermissionPrompt(
 	const isMember = await isChannelMember(slackApp, options.channel);
 	if (!isMember) {
 		await slackApp.client.chat.update({
-			channel,
+			channel: options.channel,
 			ts: options.rootThreadTs,
 			text: `Please invite @${NAME} to this channel`,
 		});
@@ -249,7 +247,10 @@ export async function handlePermissionPrompt(
 		name: "hourglass_flowing_sand",
 	});
 
-	const decision = await waitForDecision(approval.id, { waitTimeout });
+	info("Waiting for decision", { approvalId: approval.id });
+	const decision = await waitForDecision(approval.id, {
+		waitTimeout: WAIT_FOR_DECISION_TIMEOUT,
+	});
 
 	try {
 		await slackApp.client.reactions.remove({

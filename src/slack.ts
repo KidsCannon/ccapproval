@@ -1,20 +1,16 @@
 import bolt from "@slack/bolt";
 import { env } from "./env.ts";
-import { debug } from "./utils.ts";
+import { debug, error, info, warn } from "./utils.ts";
 
 const logLevel = env.CCAPPROVAL_DEBUG
 	? bolt.LogLevel.DEBUG
-	: bolt.LogLevel.ERROR;
-
-const slackDebug = (...args: unknown[]) => {
-	debug("[@slack/bolt]", ...args);
-};
+	: bolt.LogLevel.INFO;
 
 const logger = {
-	debug: slackDebug,
-	info: slackDebug,
-	warn: slackDebug,
-	error: slackDebug,
+	debug: (args: unknown[]) => debug("[@slack/bolt]", ...args),
+	info: (args: unknown[]) => info("[@slack/bolt]", ...args),
+	warn: (args: unknown[]) => warn("[@slack/bolt]", ...args),
+	error: (args: unknown[]) => error("[@slack/bolt]", ...args),
 	setLevel: () => {},
 	getLevel: () => logLevel,
 	setName: () => {},

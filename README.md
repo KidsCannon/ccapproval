@@ -85,7 +85,7 @@ alias claude-p='claude --permission-prompt-tool mcp__ccapproval__tool-approval -
 1. Create App: https://api.slack.com/apps → New App → From scratch → Name: `ccapproval`
 2. Socket Mode: Settings → Socket Mode → Enable
 3. App Token: Basic Information → App-Level Tokens → Add `connections:write` scope → Save `xapp-...`
-4. Bot Token: OAuth & Permissions → Add scopes (`chat:write`, `chat:write.public`, `reactions:write`) → Install → Save `xoxb-...`
+4. Bot Token: OAuth & Permissions → Add scopes (`channels:read`, `chat:write`, `chat:write.public`, `reactions:write`) → Install → Save `xoxb-...`
 5. Interactivity: Interactivity & Shortcuts → Enable
 6. `/invite @ccapproval` in the channel
 

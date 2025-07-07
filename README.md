@@ -1,5 +1,9 @@
 # ccapproval - Claude Code Approval
 
+<div align="center">
+  <img src="public/logo.png" alt="" width="256" height="256">
+</div>
+
 ## INSTALLATION
 
 Add MCP server:

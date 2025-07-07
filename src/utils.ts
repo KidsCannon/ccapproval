@@ -1,5 +1,7 @@
+import { env } from "./env";
+
 export function debug(...args: unknown[]) {
-	if (!process.env.CCAPPROVAL_DEBUG) return;
+	if (!env.CCAPPROVAL_DEBUG) return;
 	console.error(...args);
 }
 

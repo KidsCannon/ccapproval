@@ -10,14 +10,11 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import z from "zod";
 import { handlePermissionPrompt } from "./ccapproval.ts";
+import { env } from "./env.ts";
 import { startSlackApp } from "./slack.ts";
 import { debug, error } from "./utils.ts";
 
 const NAME = "ccapproval";
-
-const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
-const SLACK_APP_TOKEN = process.env.SLACK_APP_TOKEN;
-const SLACK_CHANNEL_NAME = process.env.SLACK_CHANNEL_NAME;
 
 const inputSchema = z.object({
 	tool_name: z.string(),
@@ -25,10 +22,6 @@ const inputSchema = z.object({
 });
 
 export async function mcp() {
-	if (!SLACK_BOT_TOKEN || !SLACK_APP_TOKEN || !SLACK_CHANNEL_NAME) {
-		throw new Error("Missing required environment variables");
-	}
-
 	const server = new Server(
 		{
 			name: NAME,
@@ -57,7 +50,7 @@ export async function mcp() {
 						}
 						debug("Calling handlePermissionPrompt");
 						return await handlePermissionPrompt(slackApp, arg.data, {
-							channel: SLACK_CHANNEL_NAME,
+							channel: env.SLACK_CHANNEL_NAME,
 							waitTimeout: 12 * 60 * 60 * 1000, // 12 hours
 						});
 					} finally {

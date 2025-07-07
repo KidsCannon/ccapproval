@@ -4,6 +4,7 @@
 	"description": "Claude Code Slack approval system via MCP",
 	"type": "module",
 	"main": "dist/index.js",
+	"bin": "dist/index.js",
 	"scripts": {
 		"check": "biome check .",
 		"test": "vitest --no-watch",

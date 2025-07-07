@@ -93,7 +93,7 @@ export class McpServer {
 		const { ts: slackThreadTs, channel } =
 			await this.slackApp.client.chat.postMessage({
 				channel: env.SLACK_CHANNEL_NAME,
-				text: "Starting ccapproval",
+				text: `Starting ${NAME}`,
 			});
 
 		// Handle tool calls

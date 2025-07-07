@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type bolt from "@slack/bolt";
+import { NAME } from "./constants.ts";
 import { isChannelMember } from "./slack.ts";
 import { button, markdownSection, plainText } from "./slack-messages.ts";
 import { debug, formatCwd, info, warn } from "./utils.ts";
@@ -226,7 +227,7 @@ export async function handlePermissionPrompt(
 		await slackApp.client.chat.update({
 			channel,
 			ts: options.rootThreadTs,
-			text: "Please invite @ccapproval to this channel",
+			text: `Please invite @${NAME} to this channel`,
 		});
 		return {
 			content: [
@@ -234,7 +235,7 @@ export async function handlePermissionPrompt(
 					type: "text",
 					text: JSON.stringify({
 						behavior: "deny",
-						message: "SlackError: Please invite @ccapproval to this channel",
+						message: `SlackError: Please invite @${NAME} to this channel`,
 					}),
 				},
 			],

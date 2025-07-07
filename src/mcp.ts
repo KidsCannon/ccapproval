@@ -17,7 +17,7 @@ import { debug, error } from "./utils.ts";
 
 const inputSchema = z.object({
 	tool_name: z.string(),
-	input: z.record(z.unknown()),
+	input: z.unknown(),
 });
 
 export async function mcp() {

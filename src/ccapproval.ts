@@ -30,7 +30,7 @@ export async function handlePermissionPrompt(
 	slackApp: bolt.App,
 	args: {
 		tool_name: string;
-		input: object;
+		input?: unknown;
 	},
 	options: {
 		channel: string;

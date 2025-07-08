@@ -14,7 +14,7 @@ $ claude mcp add ccapproval --scope user \
 	-e "SLACK_APP_TOKEN=xapp-..." \
 	-e "SLACK_CHANNEL=channel for communication" \
 	-e "SLACK_MENTION=username for mention (optional)" \
-	-- npx ccapproval@latest
+	-- npx ccapproval@0.0.7
 ```
 
 Or use MCP config file:
@@ -66,7 +66,7 @@ $ claude --debug --mcp-config ~/.config/ccapproval/mcp-debug.json --permission-p
 			"command": "bash",
 			"args": [
 				"-c",
-				"npx ccapproval@latest 2> >(systemd-cat -p err -t ccapproval)"
+				"npx ccapproval@0.0.7 2> >(systemd-cat -p err -t ccapproval)"
 			],
 			"env": {
 				"CCAPPROVAL_DEBUG": "true",

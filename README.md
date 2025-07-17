@@ -39,7 +39,7 @@ $ claude --permission-prompt-tool mcp__ccapproval__tool-approval -p [prompt]
 ## TIPS
 
 ```shell
-alias claude-p='claudee --permission-mode acceptEdits --mcp-config ~/.config/ccapproval/mcp.json --permission-prompt-tool mcp__ccapproval__tool-approval -p'
+alias claude-p='claude --permission-mode acceptEdits --mcp-config ~/.config/ccapproval/mcp.json --permission-prompt-tool mcp__ccapproval__tool-approval -p'
 ```
 
 ## TROUBLESHOOTING
